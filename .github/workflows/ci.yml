@@ -20,6 +20,10 @@ jobs:
         run: go build ./...
       - name: Test
         run: go test -race ./...
+      # The e2e suite needs a herdr binary, which the runner does not have, so
+      # only compile it here. `just e2e` runs it against a server it starts.
+      - name: Compile the e2e suite
+        run: go vet -tags e2e ./internal/e2e/...
       - name: Generated code is up to date
         run: |
           go generate ./...
@@ -27,3 +31,23 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         with:
           version: v2.13
+
+  # The transport has a file per platform and the plugin example builds on
+  # each, so a compile break on a platform nobody develops on has to fail here
+  # rather than at a user's first go build.
+  cross-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build ./...
