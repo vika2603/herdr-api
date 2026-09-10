@@ -5,7 +5,6 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -230,17 +229,18 @@ func problems(methods []string, covered map[string]call) []string {
 	return out
 }
 
-// writeReport prints the coverage of the 102 schema methods, the reason each
-// remaining method is out of reach, and every disagreement with
+// report renders the coverage of the methods the schema declares, the reason
+// each remaining method is out of reach, and every disagreement with
 // schema/method-results.json.
-func writeReport(w io.Writer, methods []string, covered map[string]call, findings []disagreement, serverVersion string, protocol uint32) {
-	fmt.Fprintf(w, "\ne2e coverage: %d of %d methods exercised against herdr %s (protocol %d)\n\n",
+func report(methods []string, covered map[string]call, findings []disagreement, serverVersion string, protocol uint32) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "\ne2e coverage: %d of %d methods exercised against herdr %s (protocol %d)\n\n",
 		len(covered), len(methods), serverVersion, protocol)
 
-	fmt.Fprintf(w, "exercised (%d):\n", len(covered))
+	fmt.Fprintf(&out, "exercised (%d):\n", len(covered))
 	for _, method := range methods {
 		if c, ok := covered[method]; ok {
-			fmt.Fprintf(w, "  %-30s %-26s %s\n", method, c.resultType, c.requestID)
+			fmt.Fprintf(&out, "  %-30s %-26s %s\n", method, c.resultType, c.requestID)
 		}
 	}
 
@@ -250,18 +250,19 @@ func writeReport(w io.Writer, methods []string, covered map[string]call, finding
 			unreached = append(unreached, method)
 		}
 	}
-	fmt.Fprintf(w, "\nout of reach (%d):\n", len(unreached))
+	fmt.Fprintf(&out, "\nout of reach (%d):\n", len(unreached))
 	for _, method := range unreached {
 		reason, ok := outOfReach[method]
 		if !ok {
 			reason = "NO REASON RECORDED"
 		}
-		fmt.Fprintf(w, "  %-30s %s\n", method, reason)
+		fmt.Fprintf(&out, "  %-30s %s\n", method, reason)
 	}
 
-	fmt.Fprintf(w, "\ndisagreements with schema/method-results.json (%d):\n", len(findings))
+	fmt.Fprintf(&out, "\ndisagreements with schema/method-results.json (%d):\n", len(findings))
 	for _, finding := range findings {
-		fmt.Fprintf(w, "  %s\n", finding)
+		fmt.Fprintf(&out, "  %s\n", finding)
 	}
-	fmt.Fprintln(w)
+	out.WriteString("\n")
+	return out.String()
 }

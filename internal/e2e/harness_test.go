@@ -61,6 +61,16 @@ type harness struct {
 	protocol uint32
 }
 
+// tempBase is the directory the temporary root is created in. On Unix it is
+// /tmp rather than the per-user temporary directory, which is long enough on
+// macOS to push the server sockets past sun_path.
+func tempBase() string {
+	if runtime.GOOS == "windows" {
+		return ""
+	}
+	return "/tmp"
+}
+
 // newHarness prepares the temporary directories, resolves the socket path
 // through the transport's own resolver and starts the server.
 func newHarness() (*harness, error) {
@@ -73,16 +83,22 @@ func newHarness() (*harness, error) {
 		return nil, fmt.Errorf("git binary not found in PATH: %w", err)
 	}
 
-	// A short prefix keeps the socket path inside sun_path.
-	root, err := os.MkdirTemp("", "he2e")
+	// The short base and prefix keep the sockets the server creates inside
+	// sun_path: on macOS the per-user temporary directory alone is 49 bytes.
+	root, err := os.MkdirTemp(tempBase(), "he2e")
 	if err != nil {
 		return nil, err
 	}
+	// The server reports resolved paths, so the suite compares against
+	// resolved ones. On macOS the temporary directory sits behind a symlink.
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
 	h := &harness{
 		root: root,
-		// The temporary root doubles as XDG_CONFIG_HOME: a further level
-		// would push <config>/herdr/sessions/<name>/herdr.sock past
-		// sun_path. herdr only creates the herdr subdirectory there.
+		// The temporary root doubles as XDG_CONFIG_HOME, which keeps the
+		// socket path short; herdr only creates the herdr subdirectory
+		// there.
 		configHome: root,
 		repo:       filepath.Join(root, "repo"),
 		binary:     binary,
@@ -111,9 +127,12 @@ func newHarness() (*harness, error) {
 		return h, err
 	}
 	h.socketPath = socketPath
-	if runtime.GOOS != "windows" && len(socketPath) > sunPathMax {
-		return h, fmt.Errorf("socket path %s is %d bytes, over the %d the system allows; point TMPDIR at a shorter directory",
-			socketPath, len(socketPath), sunPathMax)
+	// The server also creates herdr-client.sock beside the API socket, which
+	// is the longest name it binds there.
+	longest := filepath.Join(filepath.Dir(socketPath), "herdr-client.sock")
+	if runtime.GOOS != "windows" && len(longest) > sunPathMax {
+		return h, fmt.Errorf("the server would bind %s, %d bytes, over the %d the system allows",
+			longest, len(longest), sunPathMax)
 	}
 
 	h.client = herdr.New(socketPath, herdr.WithRequestIDs(h.nextRequestID), herdr.WithDialTimeout(5*time.Second))
@@ -233,7 +252,7 @@ func (h *harness) waitReady() error {
 		select {
 		case err := <-h.waited:
 			h.waited = nil
-			return fmt.Errorf("server exited before it was ready (%v): %s", err, h.serverLog())
+			return fmt.Errorf("server exited before it was ready: %w; output: %s", err, h.serverLog())
 		default:
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -247,7 +266,7 @@ func (h *harness) waitReady() error {
 		lastErr = err
 		time.Sleep(100 * time.Millisecond)
 	}
-	return fmt.Errorf("server did not answer ping within %s (%v): %s", startTimeout, lastErr, h.serverLog())
+	return fmt.Errorf("server did not answer ping within %s: %w; output: %s", startTimeout, lastErr, h.serverLog())
 }
 
 // stop asks the server to stop, waits for the process and kills it when it
@@ -350,8 +369,10 @@ func (h *harness) ctx(t *testing.T) context.Context {
 }
 
 // cover asserts that a wrapper answered with the result type
-// schema/method-results.json documents, and records the method as exercised.
-// A result type the table does not allow is recorded as a disagreement.
+// schema/method-results.json documents. The method counts as exercised as
+// soon as the server answered with a result type, so a type the table does
+// not allow is recorded both as coverage and as a disagreement; only a
+// failed call leaves the method uncovered.
 func (h *harness) cover(t *testing.T, method string, result herdr.Result, err error) bool {
 	t.Helper()
 	requestID := h.requestID()
@@ -362,22 +383,15 @@ func (h *harness) cover(t *testing.T, method string, result herdr.Result, err er
 		var unknown *herdr.UnknownResultError
 		switch {
 		case errors.As(err, &unexpected):
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unexpected.Got,
-				response: "wrapper rejected the result type; the response body was not kept",
-			})
-			t.Errorf("%s: %v", method, err)
+			h.disagree(method, requestID, want, unexpected.Got,
+				"the wrapper rejected the result type before the response was decoded")
 		case errors.As(err, &unknown):
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unknown.Type,
-				response: string(unknown.Data),
-			})
-			t.Errorf("%s: %v", method, err)
+			h.disagree(method, requestID, want, unknown.Type, string(unknown.Data))
 		default:
 			t.Errorf("%s (request %s): %v", method, requestID, err)
+			return false
 		}
+		t.Errorf("%s (request %s): %v", method, requestID, err)
 		return false
 	}
 	if result == nil {
@@ -386,17 +400,22 @@ func (h *harness) cover(t *testing.T, method string, result herdr.Result, err er
 	}
 
 	got := result.ResultType()
+	h.rec.record(method, call{requestID: requestID, resultType: got})
 	if !want.allows(got) {
-		h.rec.reportDisagreement(disagreement{
-			method: method, requestID: requestID,
-			want: want.String(), got: got,
-			response: marshal(result),
-		})
+		h.disagree(method, requestID, want, got, marshal(result))
 		t.Errorf("%s (request %s): result type %q, table says %s", method, requestID, got, want)
 		return false
 	}
-	h.rec.record(method, call{requestID: requestID, resultType: got})
 	return true
+}
+
+// disagree records a response that contradicts schema/method-results.json.
+func (h *harness) disagree(method, requestID string, want expectation, got, response string) {
+	h.rec.record(method, call{requestID: requestID, resultType: got})
+	h.rec.reportDisagreement(disagreement{
+		method: method, requestID: requestID,
+		want: want.String(), got: got, response: response,
+	})
 }
 
 // coverStream asserts the acknowledging result of a method that keeps its
@@ -410,13 +429,9 @@ func (h *harness) coverStream(t *testing.T, method string, stream *herdr.Stream,
 	}
 	ack, err := herdr.DecodeResult(stream.Ack())
 	if err != nil {
-		want := h.expect(t, method)
 		var unknown *herdr.UnknownResultError
 		if errors.As(err, &unknown) {
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unknown.Type, response: string(unknown.Data),
-			})
+			h.disagree(method, requestID, h.expect(t, method), unknown.Type, string(unknown.Data))
 		}
 		t.Errorf("%s (request %s): decode acknowledgement %s: %v", method, requestID, stream.Ack(), err)
 		return false
