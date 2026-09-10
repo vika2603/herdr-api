@@ -238,6 +238,20 @@ func TestManifest(t *testing.T) {
 }
 ```
 
+`plugintest.NewServer` adds a socket the test controls, for a handler whose
+calls have to be checked as a sequence:
+
+```go
+server := plugintest.NewServer(t).
+	Reply(herdr.MethodPaneSplit, herdr.PaneInfoResponse{Pane: herdr.PaneInfo{PaneID: "w1:p2"}}).
+	Reply(herdr.MethodPaneSendInput, herdr.OKResponse{})
+
+if err := newPlugin().Dispatch(ctx, server.Env(plugintest.Action("run"))); err != nil {
+	t.Fatal(err)
+}
+// server.Methods() and server.Calls() report what the handler asked for.
+```
+
 `Dispatch` runs the same selection `Run` does and returns the handler's error
 instead of an exit code. `CheckManifest` reports every disagreement between
 the manifest and the code: an id declared with no handler, a handler with no

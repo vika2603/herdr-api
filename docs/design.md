@@ -578,6 +578,14 @@ kind, the invocation context, the event payload and the two directories, so a
 handler test sets no environment variables. It is a separate package so that
 importing it cannot pull test-only code into a plugin binary.
 
+`plugintest.NewServer` answers the calls a handler makes from a script keyed
+by method and records what it was asked, so a handler whose second call takes
+an id from the first response can be tested end to end. It answers one
+request per connection and closes, as herdr does, and refuses an unscripted
+method with an error naming it rather than hanging. Streaming methods are out
+of scope. It needs a Unix domain socket, so it skips the test on Windows,
+where the herdr API is a named pipe that the standard library cannot create.
+
 ```go
 err := p.Dispatch(ctx, plugintest.Env(plugintest.Action("show")))
 ```
