@@ -1,0 +1,1 @@
+{"id":"1","result":{"type":"plugin_action_list","actions":[{"plugin_id":"ssh-connector","action_id":"open","title":"Task 8","contexts":["global"],"command":["./bin/ssh-connector","open"],"platforms":["macos","linux"]}]}}
