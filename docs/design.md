@@ -503,104 +503,77 @@ The last column is why `schema/README.md` records the version a snapshot was
 taken from: an upgrade means re-reading those files at the new tag, not
 guessing from behaviour.
 
-## Planned: the plugin authoring layer
+## The plugin authoring layer
 
-Writing `examples/agent-status`, the one real plugin built on this module,
-showed where the remaining work falls on the author rather than the library.
-Every item below is something that example had to hand-roll, so each is a
-measured gap and not a guess.
-
-| What the author writes today | Where it appears in the example |
-| --- | --- |
-| Reading one optional field out of the invocation context | `invokingWorkspace`, 15 lines to reach a workspace id |
-| Preferring one optional pointer over another | `agentName`, choosing `DisplayAgent` over `Agent` |
-| Joining a state path, then `ReadFile`, `WriteFile` and JSON by hand | `logPath`, `appendEntry`, `readEntries` |
-| A test asserting that the manifest's ids match the code's constants | `manifest_test.go`, rewritten per plugin |
-| A switch over action ids, and a type switch over events | one action today, unavoidable with two |
-
-The design below turns those into library surface. It is deliberately a layer
-on top of what exists: `Env`, `Run` and the generated API stay as they are,
-and a plugin that wants the current shape keeps working.
+Writing `examples/agent-status`, the first real plugin on this module, showed
+what the library still left to the author. Each piece below closes a gap that
+example had hand-rolled, which is why the rewrite onto the layer cut its
+`main.go` from 201 lines to 112 and its manifest test from 56 to 13.
 
 ### Registering by id instead of switching on one
 
 ```go
 p := plugin.New()
-p.Startup(func(ctx context.Context, env *plugin.Env) error { … })
-p.Action("show", func(ctx context.Context, env *plugin.Env) error { … })
-p.Pane("board", func(ctx context.Context, env *plugin.Env) error { … })
-plugin.OnEvent(p, func(ctx context.Context, env *plugin.Env, e *herdr.PaneAgentStatusChangedEvent) error { … })
+p.Startup(onStartup)
+p.Action("show", onShow)
+p.Pane("board", onBoard)
+plugin.OnEvent(p, onStatusChanged)   // func(context.Context, *plugin.Env, *herdr.PaneAgentStatusChangedEvent) error
 os.Exit(p.Run(ctx))
 ```
 
-The registry replaces the switch, and an id with no handler becomes an error
-at dispatch instead of a silent success. `OnEvent` is a free function rather
-than a method because it takes a type parameter: the generated event types
-implement `EventName()`, so the event name comes from the handler's own
-argument type and the author never writes the string. A handler registered
-for an event the process was not invoked for is a programming error worth
-reporting, not a no-op.
+`OnEvent` is a free function rather than a method because it takes a type
+parameter: the generated event types implement `EventName`, so the name comes
+from the handler's own argument and the author never writes the string. A
+payload shared with a subscription-only event is rejected at registration,
+since the name would be ambiguous.
 
-`Run` keeps the exit-code contract. The existing `Handlers` struct stays for
-callers that prefer it, with the registry built on the same dispatch.
+Registration mistakes panic rather than surfacing at dispatch: a nil handler,
+an empty id, or a second registration for an id already taken. Registration is
+a program's static description of itself, and a silent overwrite would make
+`CheckManifest` agree with a manifest the binary does not serve. `Handlers`
+and the original `Run` still work, on the same dispatch.
 
 ### Checking the manifest against the code
 
 ```go
 func TestManifest(t *testing.T) {
-    plugintest.CheckManifest(t, "herdr-plugin.toml", p)
+    plugintest.CheckManifest(t, "herdr-plugin.toml", newPlugin())
 }
 ```
 
-The manifest is static and herdr validates it, but nothing today ties its
-ids to the handlers a binary actually serves: a renamed action fails at
-invocation time, in Herdr, not in a test. Because the registry knows every
-id and event name it can answer that question, so one call replaces the
-per-plugin test the example wrote by hand. It reports an id declared in the
-manifest with no handler, a handler with no manifest entry, and an
-`[[events]] on` value herdr never fires a hook for.
+Herdr validates the manifest, but nothing tied its ids to the handlers a
+binary serves, so a renamed action failed at invocation time rather than in a
+test. The registry knows every id, so one call reports an id declared with no
+handler, a handler with no manifest entry, and an `[[events]] on` value herdr
+never fires a hook for.
 
 ### Testing a handler without Herdr
 
 ```go
 env := plugintest.Env(plugintest.Action("show"), plugintest.Workspace("w1"))
-err := handler(ctx, env)
 ```
 
-Testing a plugin means building the environment Herdr injects, which today
-means setting a dozen variables by hand. `plugintest` builds an `Env`
-directly, with options for the entrypoint kind, the invocation context and
-the event payload. A second tier, backed by the harness `internal/e2e`
-already has, runs a handler against a real server under a temporary config
-home; that stays internal until the first tier proves its shape.
+`plugin/plugintest` builds an `Env` directly, with options for the entrypoint
+kind, the invocation context, the event payload and the two directories, so a
+handler test sets no environment variables. It is a separate package so that
+importing it cannot pull test-only code into a plugin binary.
 
-### Reaching the context without pointer checks
+### Reading the context without pointer checks
 
-```go
-func (e *Env) WorkspaceID() string   // "" when Herdr passed none
-func (e *Env) FocusedPaneID() string
-func (e *Env) ClickedURL() string
-func (e *Env) SelectedText() string
-```
-
-Optional fields are pointers because a request must distinguish unset from
-zero, but a plugin reading its own invocation context almost never needs
-that distinction: it wants the value or the empty string. The pointer form
-stays available through `Context()`.
+`Env.Invocation` returns the invocation context with its optional fields
+flattened to values: a field Herdr did not send reads as the empty string.
+It reports no error, because an entrypoint invoked without a context and a
+context that fails to decode leave a plugin reading one field with nothing
+different to do; `Env.Context` keeps the pointer form for when the difference
+matters. `Worktree` stays a pointer, having no useful empty value.
 
 ### Owning state without the file plumbing
 
-```go
-func (e *Env) StatePath(name ...string) string
-func (e *Env) ReadStateJSON(name string, into any) error   // absent file is not an error
-func (e *Env) WriteStateJSON(name string, value any) error // atomic: write a temp file, then rename
-func (e *Env) ConfigPath(name ...string) string
-```
-
-Herdr gives a plugin two directories and no storage API, which is the right
-division, but every plugin then repeats the same three lines and usually
-forgets that a crash mid-write leaves a truncated file. The atomic rename is
-the reason this belongs in the library rather than in each plugin.
+`StatePath`, `ConfigPath`, `ReadState`, `WriteState`, their JSON forms and
+`AppendStateJSONL` share one write path: a temporary file in the same
+directory, then a rename, so a crash mid-write cannot truncate what was there.
+A name that would escape the directory is rejected. That atomicity is the
+reason this belongs in the library rather than in each plugin.
 
 ### What is deliberately not included
 
