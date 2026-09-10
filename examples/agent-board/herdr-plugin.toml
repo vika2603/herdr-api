@@ -14,8 +14,8 @@ platforms = ["linux", "macos"]
 command = ["go", "build", "-o", "herdr-agent-board", "."]
 
 # Herdr runs this command in a pane it owns and stops it when the pane closes.
-# Overlay placement gives the board the whole area and needs no target pane,
-# which is what lets the "open" action name nothing but the entrypoint.
+# Overlay placement needs neither a target pane nor a workspace, which is what
+# lets the "open" action name nothing but the plugin and the entrypoint.
 [[panes]]
 id = "board"
 title = "Agent board"

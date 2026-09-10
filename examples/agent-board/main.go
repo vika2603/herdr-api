@@ -55,9 +55,9 @@ func newPlugin() *plugin.Plugin {
 }
 
 // onOpen opens the board in a pane. Herdr can start a pane entrypoint on its
-// own, so this action exists to show the other way in: placement, size and
-// title come from the manifest, which leaves the entrypoint id the only thing
-// the call has to name.
+// own, so this action exists to show the other way in: the placement and the
+// pane title come from the manifest, which leaves the plugin and the
+// entrypoint the only things the call has to name.
 func onOpen(ctx context.Context, env *plugin.Env) error {
 	_, err := env.Client().PluginPaneOpen(ctx, herdr.PluginPaneOpenParams{
 		PluginID:   env.PluginID,
