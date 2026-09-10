@@ -404,3 +404,19 @@ can reach is called and its response decoded through the generated wrapper, so
 a wrong result type fails as a decode or assertion error. The suite reports
 which of the 102 methods it covered and why each remaining one is out of reach,
 for example the graphics and popup methods that need an attached client.
+
+## Known gaps
+
+`pane.graphics.stream` is the one method the server accepts that the schema
+does not declare, so no wrapper is generated for it. Comparing the method list
+the server reports in an `invalid_request` error against the schema snapshot
+of herdr 0.9.0 shows that single difference; every other method the server
+accepts is generated. The method is absent from the schema because its framing
+is not newline-delimited JSON: after the server acknowledges the request, the
+client sends one JSON header followed by exactly `data_length` raw bytes per
+frame. Supporting it means a hand-written streaming type next to the
+transport, not a generated wrapper, and it is a phase 3 candidate along with
+the `pane.graphics.*` helpers that would make it usable.
+
+Rerun that comparison after a schema refresh: a method that appears in the
+error list but not in the snapshot is a method this module cannot reach.
