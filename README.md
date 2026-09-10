@@ -17,6 +17,9 @@ Generated against herdr 0.9.0, protocol 22.
 go get github.com/vika2603/herdr-client
 ```
 
+This is a v0, so the API can still change between minor versions. Pin the
+version you build against.
+
 The module holds two packages a plugin imports:
 
 ```go
@@ -330,13 +333,3 @@ Behaviour the schema does not describe, such as how socket paths resolve or
 what a plugin manifest may contain, was read out of the herdr sources. The
 upgrade checklist in `docs/design.md` lists each of those facts with the file
 it came from, because nothing regenerates them.
-
-## Status
-
-The client, the session mirror, the plugin authoring layer and the manifest
-parser are usable. 92 of the 102 methods are exercised against a real server
-by `internal/e2e`; the rest need an attached client or a running agent.
-
-The current release is v0.1.0. It is a v0, so the API can still change
-between minor versions: pin the version you build against. See
-`docs/design.md` for the design and what is planned next.
