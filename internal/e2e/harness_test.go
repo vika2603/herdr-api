@@ -96,9 +96,9 @@ func newHarness() (*harness, error) {
 	}
 	h := &harness{
 		root: root,
-		// The temporary root doubles as XDG_CONFIG_HOME: a further level
-		// would push <config>/herdr/sessions/<name>/herdr.sock past
-		// sun_path. herdr only creates the herdr subdirectory there.
+		// The temporary root doubles as XDG_CONFIG_HOME, which keeps the
+		// socket path short; herdr only creates the herdr subdirectory
+		// there.
 		configHome: root,
 		repo:       filepath.Join(root, "repo"),
 		binary:     binary,
