@@ -687,3 +687,35 @@ func TestLiveOpenSession(t *testing.T) {
 		}
 	}
 }
+
+// The collector stops as soon as the snapshot answers, so a buffered event may
+// be taken from the connection or still be waiting on it. Repeating the
+// bootstrap covers both.
+func TestOpenSessionKeepsEveryBufferedEvent(t *testing.T) {
+	for range 20 {
+		server := newMirrorServer(t, testSnapshot())
+		server.onSnapshot(func(m *mirrorServer) {
+			stream := m.lastStream()
+			for i := range 3 {
+				pane := testPane("w1", "w1:t1", fmt.Sprintf("w1:p%d", 20+i))
+				stream.pushSync(eventLine(t, string(EventKindPaneCreated), PaneCreatedEvent{Pane: pane}))
+			}
+		})
+
+		session := openTestSession(t, server)
+		server.acceptStream()
+		for i := range 3 {
+			event := nextEvent(t, session)
+			created, ok := event.(*PaneCreatedEvent)
+			if !ok {
+				t.Fatalf("event %d is %T, want *PaneCreatedEvent", i, event)
+			}
+			if want := fmt.Sprintf("w1:p%d", 20+i); created.Pane.PaneID != want {
+				t.Fatalf("event %d is for pane %s, want %s", i, created.Pane.PaneID, want)
+			}
+		}
+		if err := session.Close(); err != nil {
+			t.Fatalf("Close: %v", err)
+		}
+	}
+}
