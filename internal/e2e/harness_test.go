@@ -61,6 +61,16 @@ type harness struct {
 	protocol uint32
 }
 
+// tempBase is the directory the temporary root is created in. On Unix it is
+// /tmp rather than the per-user temporary directory, which is long enough on
+// macOS to push the server sockets past sun_path.
+func tempBase() string {
+	if runtime.GOOS == "windows" {
+		return ""
+	}
+	return "/tmp"
+}
+
 // newHarness prepares the temporary directories, resolves the socket path
 // through the transport's own resolver and starts the server.
 func newHarness() (*harness, error) {
@@ -73,10 +83,16 @@ func newHarness() (*harness, error) {
 		return nil, fmt.Errorf("git binary not found in PATH: %w", err)
 	}
 
-	// A short prefix keeps the socket path inside sun_path.
-	root, err := os.MkdirTemp("", "he2e")
+	// The short base and prefix keep the sockets the server creates inside
+	// sun_path: on macOS the per-user temporary directory alone is 49 bytes.
+	root, err := os.MkdirTemp(tempBase(), "he2e")
 	if err != nil {
 		return nil, err
+	}
+	// The server reports resolved paths, so the suite compares against
+	// resolved ones. On macOS the temporary directory sits behind a symlink.
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
 	}
 	h := &harness{
 		root: root,
@@ -111,9 +127,12 @@ func newHarness() (*harness, error) {
 		return h, err
 	}
 	h.socketPath = socketPath
-	if runtime.GOOS != "windows" && len(socketPath) > sunPathMax {
-		return h, fmt.Errorf("socket path %s is %d bytes, over the %d the system allows; point TMPDIR at a shorter directory",
-			socketPath, len(socketPath), sunPathMax)
+	// The server also creates herdr-client.sock beside the API socket, which
+	// is the longest name it binds there.
+	longest := filepath.Join(filepath.Dir(socketPath), "herdr-client.sock")
+	if runtime.GOOS != "windows" && len(longest) > sunPathMax {
+		return h, fmt.Errorf("the server would bind %s, %d bytes, over the %d the system allows",
+			longest, len(longest), sunPathMax)
 	}
 
 	h.client = herdr.New(socketPath, herdr.WithRequestIDs(h.nextRequestID), herdr.WithDialTimeout(5*time.Second))

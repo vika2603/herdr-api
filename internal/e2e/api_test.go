@@ -28,6 +28,8 @@ func TestAPISurface(t *testing.T) {
 		{"layout", stageLayout},
 		{"agent", stageAgent},
 		{"events", stageEvents},
+		{"worktree", stageWorktree},
+		{"plugin-registry", stagePluginRegistry},
 	}
 
 	var st state
