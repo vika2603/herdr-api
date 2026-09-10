@@ -13,8 +13,9 @@ generated Go type and method wrapper in this module.
 `method-results.json` maps each request method to the `ResponseResult`
 variant it returns. The schema does not carry this relation, so the table is
 maintained by hand: it was read out of the herdr handlers for the version
-above, and `internal/e2e` then confirmed it by calling 82 of the 102 methods
-against a real server and checking the type that came back. The generator
+above, and `internal/e2e` then confirmed it by calling 90 of the 102 methods
+against a real server and checking the type that came back, with no
+disagreements. The generator
 refuses to run when a method in the schema has no entry, or when an entry
 names an unknown method or result type.
 
@@ -28,7 +29,7 @@ as known and fails only on new drift.
 just herdr-check            # report what moved before changing anything
 just schema-update          # rewrite herdr-api.schema.json from the installed herdr
 just gen                    # regenerate *_gen.go
-just check                  # build, test, lint, verify the generated code is current
+just check                  # build, test, lint, cross-platform type-check, verify the generated code is current
 just e2e                    # confirm the result types against a real server
 ```
 
