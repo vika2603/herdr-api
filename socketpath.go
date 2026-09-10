@@ -33,6 +33,10 @@ const (
 //
 // <config> is $XDG_CONFIG_HOME/herdr when that variable is set, and the
 // platform config directory otherwise.
+//
+// The last path segment is always herdr. A herdr built with debug assertions
+// uses herdr-dev instead, so a resolved path only reaches a release build.
+// Set HERDR_SOCKET_PATH to reach a debug-built server.
 func ResolveSocketPath(session string) (string, error) {
 	if session != "" {
 		name, err := normalizeSessionName(session)
