@@ -33,16 +33,21 @@ copies of one decision cannot drift apart.
 
 `newPlan` turns the URL and the configuration into the requests to make, and
 `bootstrap` makes them, taking every id from the response that carries it. The
-decision is therefore testable without a server, and each call names what the
-previous one returned rather than a guess:
+decision is therefore testable on its own, and the calls are covered against
+the socket `plugintest.NewServer` provides, so each one is checked to name
+what the previous one returned rather than a guess:
 
 | Call | Ids it needs | What it answers with |
 | --- | --- | --- |
 | `worktree.create` | the invoking workspace, which names the repository | the new workspace, its tab, and the checkout path |
 | `workspace.report_metadata` | the new workspace id | — |
 | `layout.apply` | the tab the worktree opened, the checkout path for both panes | the applied layout, with a pane id per pane |
-| `agent.start` | the pane id of the agent pane | the started agent, in a pane |
+| `agent.start` | the pane the layout labelled for the agent | the started agent, in a pane |
 | `agent.prompt` | that pane as the target | — |
+
+Pane ids are assigned by `layout.apply`, so the agent pane can only be found
+in its answer. The plugin labels that pane in the request and matches the
+label with `herdr.LayoutPanes`, rather than taking a position in the tree.
 
 Two of those ids are worth spelling out. `worktree.create` takes the workspace
 the action was invoked from, because that is how it finds the repository to
@@ -60,8 +65,8 @@ does not expire.
 
 `HERDR_PLUGIN_CONFIG_DIR` is the directory Herdr gives the plugin for
 user-editable configuration. This plugin reads `config.json` from it through
-`Env.ConfigPath`, and both fields have working defaults, so an unconfigured
-plugin still bootstraps:
+`Env.ReadConfigJSON`, which leaves the defaults in place when the file is
+absent or sets only some fields, so an unconfigured plugin still bootstraps:
 
 ```json
 {
