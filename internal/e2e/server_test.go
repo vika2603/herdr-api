@@ -28,9 +28,16 @@ func stageServer(t *testing.T, h *harness, _ *state) {
 		}
 	}
 
+	// The suite writes the configuration the server runs on, so a rejected
+	// key is a fault of the suite and shows up here as a diagnostic.
 	reload, err := h.client.ServerReloadConfig(h.ctx(t))
-	if h.cover(t, herdr.MethodServerReloadConfig, reload, err) && reload.Status == "" {
-		t.Errorf("server.reload_config reported no status")
+	if h.cover(t, herdr.MethodServerReloadConfig, reload, err) {
+		if reload.Status == "" {
+			t.Errorf("server.reload_config reported no status")
+		}
+		if len(reload.Diagnostics) > 0 {
+			t.Errorf("server.reload_config rejected part of the configuration the suite wrote: %v", reload.Diagnostics)
+		}
 	}
 
 	manifests, err := h.client.ServerAgentManifests(h.ctx(t))

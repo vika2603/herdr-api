@@ -123,6 +123,9 @@ func newHarness() (*harness, error) {
 		return fmt.Sprintf("e2e-trigger-%d", triggerSeq)
 	}), herdr.WithDialTimeout(5*time.Second))
 
+	if err := h.writeConfig(); err != nil {
+		return h, err
+	}
 	if err := h.initRepo(); err != nil {
 		return h, err
 	}
@@ -182,6 +185,22 @@ func (h *harness) serverEnv() []string {
 		"EDITOR=true",
 		"VISUAL=true",
 	)
+}
+
+// writeConfig gives the server a configuration of its own. The panes run a
+// non-login /bin/sh so that starting one does not depend on the interactive
+// shell configuration of whoever runs the suite: a slow or blocking shell
+// startup shows up as text written to a pane getting lost.
+func (h *harness) writeConfig() error {
+	dir := filepath.Join(h.configHome, "herdr")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	config := "[terminal]\nshell_mode = \"non_login\"\n"
+	if runtime.GOOS != "windows" {
+		config += "default_shell = \"/bin/sh\"\n"
+	}
+	return os.WriteFile(filepath.Join(dir, "config.toml"), []byte(config), 0o600)
 }
 
 func (h *harness) startServer() error {
