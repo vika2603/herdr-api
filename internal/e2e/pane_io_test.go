@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/vika2603/herdr-api"
 )
@@ -13,12 +14,15 @@ import (
 const (
 	markerSendText  = "E2E-SEND-TEXT"
 	markerSendInput = "E2E-SEND-INPUT"
+	markerShell     = "E2E-SHELL-READY"
 )
 
 // stagePaneIO drives the terminal of the workspace root pane: it writes two
 // commands, waits for the second to appear and then reads, so the read and
 // the copy mode methods work on known content.
 func stagePaneIO(t *testing.T, h *harness, st *state) {
+	waitPaneShell(t, h, st.paneID)
+
 	sent, err := h.client.PaneSendText(h.ctx(t), herdr.PaneSendTextParams{
 		PaneID: st.paneID,
 		Text:   "echo " + markerSendText + "\n",
@@ -133,6 +137,61 @@ func stageEditScrollback(t *testing.T, h *harness, st *state) {
 			t.Errorf("close the editor pane %s: %v", paneID, err)
 		}
 	}
+}
+
+// waitPaneShell blocks until the shell of the pane runs what is written to
+// it. A pane answers pane.get as soon as it exists, but text written before
+// its shell reads from the terminal is lost, so the marker is repeated until
+// it comes back.
+func waitPaneShell(t *testing.T, h *harness, paneID string) {
+	t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		if _, err := h.client.PaneSendText(h.ctx(t), herdr.PaneSendTextParams{
+			PaneID: paneID,
+			Text:   "echo " + markerShell + "\n",
+		}); err != nil {
+			t.Fatalf("pane.send_text: %v", err)
+		}
+		_, err := h.client.PaneWaitForOutput(h.ctx(t), herdr.PaneWaitForOutputParams{
+			PaneID:    paneID,
+			Source:    herdr.ReadSourceRecent,
+			Match:     herdr.OutputMatchSubstring{Value: markerShell},
+			TimeoutMs: ptr(uint64(1000)),
+		})
+		if err == nil {
+			return
+		}
+		if !herdr.IsCode(err, herdr.ErrCodeTimeout) {
+			t.Fatalf("pane.wait_for_output: %v", err)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the shell of pane %s did not run a command within 15s\nprocess: %s\nvisible: %s",
+				paneID, describePaneProcess(t, h, paneID), describePaneText(t, h, paneID))
+		}
+	}
+}
+
+func describePaneProcess(t *testing.T, h *harness, paneID string) string {
+	t.Helper()
+	info, err := h.client.PaneProcessInfo(h.ctx(t), herdr.PaneProcessInfoParams{PaneID: ptr(paneID)})
+	if err != nil {
+		return "pane.process_info: " + err.Error()
+	}
+	return marshal(info.ProcessInfo)
+}
+
+func describePaneText(t *testing.T, h *harness, paneID string) string {
+	t.Helper()
+	read, err := h.client.PaneRead(h.ctx(t), herdr.PaneReadParams{
+		PaneID: paneID,
+		Source: herdr.ReadSourceVisible,
+		Format: herdr.ReadFormatText,
+	})
+	if err != nil {
+		return "pane.read: " + err.Error()
+	}
+	return marshal(read.Read.Text)
 }
 
 func panesOf(t *testing.T, h *harness, workspaceID string) map[string]bool {
