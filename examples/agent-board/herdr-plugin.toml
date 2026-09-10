@@ -1,0 +1,31 @@
+# Example plugin: a pane entrypoint that renders a live board of the session,
+# plus an action that opens it. See README.md.
+
+id = "example.agent-board"
+name = "Agent Board"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Renders the workspaces, tabs and agents of the session in a pane"
+# Windows is left out to keep the example short: it would need a second entry
+# per command building and running herdr-agent-board.exe.
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["go", "build", "-o", "herdr-agent-board", "."]
+
+# Herdr runs this command in a pane it owns and stops it when the pane closes.
+# Overlay placement gives the board the whole area and needs no target pane,
+# which is what lets the "open" action name nothing but the entrypoint.
+[[panes]]
+id = "board"
+title = "Agent board"
+description = "A live board of the workspaces, tabs and agents of the session"
+placement = "overlay"
+command = ["./herdr-agent-board"]
+
+[[actions]]
+id = "open"
+title = "Open the agent board"
+description = "Open the board in a plugin pane"
+contexts = ["global", "workspace"]
+command = ["./herdr-agent-board"]
