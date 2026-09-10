@@ -24,6 +24,7 @@ func TestAPISurface(t *testing.T) {
 		{"workspace", stageWorkspace},
 		{"tab", stageTab},
 		{"pane", stagePane},
+		{"pane-io", stagePaneIO},
 	}
 
 	var st state
