@@ -42,6 +42,9 @@ type Handlers struct {
 // entrypoint kind and returns the process exit code, so a plugin's main is
 // os.Exit(plugin.Run(ctx, handlers)).
 //
+// New returns a registry that dispatches by id on the same machinery and
+// reports the same exit codes.
+//
 // Run neither installs signal handlers nor cancels ctx on its own. A pane
 // entrypoint, which runs until the user closes the pane, should pass a
 // context from ShutdownContext so that closing the pane ends it cleanly.
@@ -49,17 +52,23 @@ type Handlers struct {
 // Errors are written to stderr, which Herdr captures in its plugin command log
 // alongside the exit code. See ExitOK, ExitHandlerError and ExitRuntimeError.
 func Run(ctx context.Context, h Handlers) int {
-	return run(ctx, h, os.LookupEnv, os.Stderr)
+	return run(ctx, h.bind, os.LookupEnv, os.Stderr)
 }
 
-// run is Run with the environment lookup and the error output injected.
-func run(ctx context.Context, h Handlers, lookup func(string) (string, bool), stderr io.Writer) int {
+// binder selects the handler for an entrypoint kind and binds the arguments
+// it takes from env. It reports an error when no handler can run, which Run
+// turns into ExitRuntimeError.
+type binder func(env *Env, kind EntryKind) (func(context.Context) error, error)
+
+// run is Run with the dispatch, the environment lookup and the error output
+// injected. Handlers and Plugin differ only in the binder they supply.
+func run(ctx context.Context, bind binder, lookup func(string) (string, bool), stderr io.Writer) int {
 	env, err := LoadFrom(lookup)
 	if err != nil {
 		return fail(stderr, ExitRuntimeError, err)
 	}
 	kind := env.Kind()
-	handler, err := bind(h, env, kind)
+	handler, err := bind(env, kind)
 	if err != nil {
 		return fail(stderr, ExitRuntimeError, err)
 	}
@@ -70,7 +79,7 @@ func run(ctx context.Context, h Handlers, lookup func(string) (string, bool), st
 }
 
 // bind selects the handler for kind and binds the arguments it takes from env.
-func bind(h Handlers, env *Env, kind EntryKind) (func(context.Context) error, error) {
+func (h Handlers) bind(env *Env, kind EntryKind) (func(context.Context) error, error) {
 	switch kind {
 	case KindStartup:
 		if h.Startup == nil {
@@ -86,10 +95,9 @@ func bind(h Handlers, env *Env, kind EntryKind) (func(context.Context) error, er
 		if h.Event == nil {
 			return nil, errNoHandler(kind)
 		}
-		envelope, err := env.EventEnvelope()
+		envelope, err := env.eventEnvelope()
 		if err != nil {
-			// The sentinel and decode errors already carry the package prefix.
-			return nil, fmt.Errorf("event hook %s: %w", env.Event, err)
+			return nil, err
 		}
 		return func(ctx context.Context) error { return h.Event(ctx, env, envelope) }, nil
 	case KindPane:
@@ -98,13 +106,28 @@ func bind(h Handlers, env *Env, kind EntryKind) (func(context.Context) error, er
 		}
 		return func(ctx context.Context) error { return h.Pane(ctx, env, env.EntrypointID) }, nil
 	default:
-		return nil, fmt.Errorf("plugin: %s entrypoint kind: neither %s, %s nor %s is set",
-			kind, envEvent, envActionID, envEntrypointID)
+		return nil, errUnknownKind(kind)
 	}
+}
+
+// eventEnvelope decodes the hook payload, naming the event in the error so a
+// failure in the plugin command log says which hook could not run.
+func (e *Env) eventEnvelope() (*herdr.EventEnvelope, error) {
+	envelope, err := e.EventEnvelope()
+	if err != nil {
+		// The sentinel and decode errors already carry the package prefix.
+		return nil, fmt.Errorf("event hook %s: %w", e.Event, err)
+	}
+	return envelope, nil
 }
 
 func errNoHandler(kind EntryKind) error {
 	return fmt.Errorf("plugin: no %s handler registered", kind)
+}
+
+func errUnknownKind(kind EntryKind) error {
+	return fmt.Errorf("plugin: %s entrypoint kind: neither %s, %s nor %s is set",
+		kind, envEvent, envActionID, envEntrypointID)
 }
 
 func fail(stderr io.Writer, code int, err error) int {
