@@ -19,7 +19,21 @@ test:
 lint:
     golangci-lint run ./...
 
-check: build test lint check-gen
+# Type-check the e2e suite. Its build tag keeps it out of `test` and
+# `.golangci.yml` excludes it, so nothing else notices when a change to the
+# client breaks it.
+check-e2e:
+    go vet -tags e2e ./internal/e2e/...
+
+# Type-check every package, tests included, for the other platforms. `go
+# build` skips test files, so a break confined to a platform-specific one
+# would otherwise reach CI.
+check-cross:
+    GOOS=windows go vet ./...
+    GOOS=linux go vet ./...
+    GOOS=darwin go vet ./...
+
+check: build test lint check-gen check-e2e check-cross
 
 # Live tests against a Herdr server the suite starts itself (see internal/e2e).
 # -v keeps the coverage report the suite prints visible on a passing run.

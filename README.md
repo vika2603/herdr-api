@@ -298,7 +298,7 @@ eligible.
 just herdr-check     # report what moved before changing anything
 just schema-update   # rewrite schema/herdr-api.schema.json from the installed herdr
 just gen             # regenerate *_gen.go
-just check           # build, test, lint, and verify the generated code is current
+just check           # build, test, lint, cross-platform type-check, and verify the generated code is current
 just e2e             # confirm the result types against a server the suite starts
 ```
 

@@ -448,8 +448,12 @@ suite asserts that the caller's real registry is unchanged across the run,
 comparing contents rather than modification time, because a live server
 rewrites that file with identical contents.
 
-`just check` runs build, tests, lint and the generated-code check. `just e2e`
-runs the suite above. `just herdr-check` reports drift from the snapshot.
+`just check` runs build, tests, lint and the generated-code check, then two
+type-checks that nothing else covers: the e2e suite, which its build tag
+keeps out of `test` and `.golangci.yml` excludes from lint, and every package
+for the other platforms, because `go build` skips test files and a break
+confined to a platform-specific one would otherwise reach CI. `just e2e` runs
+the suite above. `just herdr-check` reports drift from the snapshot.
 
 ## Known gaps
 

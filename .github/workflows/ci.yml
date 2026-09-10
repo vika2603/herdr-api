@@ -51,3 +51,10 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: go build ./...
+      # go build skips test files, so a break confined to a platform-specific
+      # one would reach a user before it reached CI. vet compiles them.
+      - name: Type-check the tests for ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go vet ./...
