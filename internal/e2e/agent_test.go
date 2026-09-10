@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 const (
 	// reportSource identifies the suite as the authority that reports pane
 	// metadata, which is what pane.clear_agent_authority later withdraws.
-	reportSource = "herdr-api-e2e"
+	reportSource = "herdr-client-e2e"
 	// reportedAgent is the agent the pane reports itself as running. No
 	// agent process is started; agent.start, agent.prompt and
 	// agent.send_keys need one and stay out of reach.

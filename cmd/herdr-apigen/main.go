@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/vika2603/herdr-api/internal/gen"
+	"github.com/vika2603/herdr-client/internal/gen"
 )
 
 func main() {

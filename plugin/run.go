@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 // Exit codes Run returns. Herdr stores the exit status of every plugin command

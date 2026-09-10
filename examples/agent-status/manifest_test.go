@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/vika2603/herdr-api/plugin/manifest"
+	"github.com/vika2603/herdr-client/plugin/manifest"
 )
 
 // TestManifest checks herdr-plugin.toml against the rules Herdr enforces and

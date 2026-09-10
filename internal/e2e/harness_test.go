@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 const (
@@ -318,7 +318,7 @@ func (h *harness) initRepo() error {
 		return err
 	}
 	readme := filepath.Join(h.repo, "README.md")
-	if err := os.WriteFile(readme, []byte("herdr-api end-to-end fixture\n"), 0o600); err != nil {
+	if err := os.WriteFile(readme, []byte("herdr-client end-to-end fixture\n"), 0o600); err != nil {
 		return err
 	}
 	commands := [][]string{
@@ -342,7 +342,7 @@ func (h *harness) addWorktree(path, branch string) error {
 
 func (h *harness) runGit(args ...string) error {
 	full := append([]string{
-		"-c", "user.name=herdr-api e2e",
+		"-c", "user.name=herdr-client e2e",
 		"-c", "user.email=e2e@example.invalid",
 		"-c", "commit.gpgsign=false",
 	}, args...)

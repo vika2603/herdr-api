@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 // stageWorktree works on the git repository the harness created. Every call

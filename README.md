@@ -1,7 +1,7 @@
-# herdr-api
+# herdr-client
 
-Go client for the [Herdr](https://herdr.dev) socket API, and a toolkit for
-writing Herdr plugins in Go.
+Go client for [Herdr](https://herdr.dev): the full socket API, a live mirror
+of the session, and the pieces a Herdr plugin written in Go needs.
 
 The wire types, the result and event decoders, and a typed wrapper for every
 one of the 102 API methods are generated from the schema the herdr binary
@@ -14,7 +14,7 @@ Generated against herdr 0.9.0, protocol 22.
 ## Install
 
 ```bash
-go get github.com/vika2603/herdr-api
+go get github.com/vika2603/herdr-client
 ```
 
 ## Connect and call
@@ -123,6 +123,38 @@ A subscription starts when the server accepts it and does not replay earlier
 events. To build a complete picture, open the subscription first, buffer what
 arrives, then call `SessionSnapshot` and apply the buffer on top.
 
+## Mirroring a session
+
+A plugin that reacts to what happens across the whole session wants the state,
+not just the events. `OpenSession` subscribes first, takes a snapshot, applies
+whatever arrived in between, and then keeps the cache current as it hands each
+event to the caller:
+
+```go
+session, err := herdr.OpenSession(ctx, client)
+if err != nil {
+	return err
+}
+defer session.Close()
+
+for {
+	event, err := session.Next(ctx)
+	if err != nil {
+		return err
+	}
+	if _, ok := event.(*herdr.PaneAgentStatusChangedEvent); ok {
+		for _, agent := range session.Agents() {
+			fmt.Println(agent.PaneID, agent.AgentStatus)
+		}
+	}
+}
+```
+
+The cache is updated before `Next` returns, so reading it afterwards shows the
+state that event produced. A server restart, which happens on live handoff,
+is handled by reconnecting and taking a fresh snapshot; the gap is reported as
+one resync event so a caller can drop anything it derived from the old state.
+
 ## Writing a plugin
 
 A Herdr plugin is a directory with a `herdr-plugin.toml` manifest and commands
@@ -161,7 +193,7 @@ action id is an error.
 | Path | Contents |
 | --- | --- |
 | `.` (package `herdr`) | Transport, plus the generated types, results, events and method wrappers |
-| `plugin` | The environment Herdr injects into plugin commands |
+| `plugin` | The environment Herdr injects into plugin commands, and `Run` |
 | `plugin/manifest` | `herdr-plugin.toml` parsing and validation |
 | `cmd/herdr-apigen`, `internal/gen` | The generator that produces `*_gen.go` |
 | `schema` | The schema snapshot and the method-to-result table |
@@ -187,6 +219,8 @@ not break a client outright. Compare the `Protocol` in a `Ping` response with
 
 ## Status
 
-The client, the generator and the manifest parser are complete. The plugin
-runtime dispatcher, a cached live session mirror and the end-to-end suite are
-in progress; see the phase 2 section of `docs/design.md`.
+The client, the session mirror, the plugin runtime and the manifest parser are
+usable. 82 of the 102 methods are exercised against a real server by
+`internal/e2e`; the rest need an attached client or a running agent. There is
+no tagged release yet, so `go get` resolves a pseudo-version of the latest
+commit. See `docs/design.md` for the design and what is planned next.

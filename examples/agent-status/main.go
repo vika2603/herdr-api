@@ -17,8 +17,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vika2603/herdr-api"
-	"github.com/vika2603/herdr-api/plugin"
+	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/plugin"
 )
 
 // Entrypoints declared in herdr-plugin.toml. A test checks the manifest

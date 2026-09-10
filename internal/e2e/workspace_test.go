@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 // stageWorkspace creates the workspace the later stages work in and calls
@@ -85,7 +85,7 @@ func stageWorkspace(t *testing.T, h *harness, st *state) {
 
 	metadata, err := h.client.WorkspaceReportMetadata(h.ctx(t), herdr.WorkspaceReportMetadataParams{
 		WorkspaceID: st.workspaceID,
-		Source:      "herdr-api-e2e",
+		Source:      "herdr-client-e2e",
 		Tokens:      map[string]*string{"e2e": ptr("1")},
 	})
 	h.cover(t, herdr.MethodWorkspaceReportMetadata, metadata, err)

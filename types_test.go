@@ -78,7 +78,7 @@ func TestDecodeCapturedResults(t *testing.T) {
 				for _, workspace := range list.Workspaces {
 					if workspace.Worktree != nil {
 						worktrees++
-						if workspace.Worktree.RepoName != "herdr-api" {
+						if workspace.Worktree.RepoName != "herdr-client" {
 							t.Errorf("worktree repo = %q", workspace.Worktree.RepoName)
 						}
 					}

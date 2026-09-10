@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 // stageEvents opens a subscription and waits for a single event. Both need a

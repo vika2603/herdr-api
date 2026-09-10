@@ -27,7 +27,7 @@ Linking registers the plugin for your user account and enables it in every
 Herdr session, so run it yourself rather than letting a tool do it:
 
 ```bash
-herdr plugin link path/to/herdr-api/examples/agent-status
+herdr plugin link path/to/herdr-client/examples/agent-status
 herdr plugin list
 ```
 

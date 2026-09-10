@@ -1,4 +1,4 @@
-module github.com/vika2603/herdr-api
+module github.com/vika2603/herdr-client
 
 go 1.25
 

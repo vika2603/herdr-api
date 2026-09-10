@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/vika2603/herdr-api"
-	"github.com/vika2603/herdr-api/plugin"
+	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/plugin"
 )
 
 func statusEvent(paneID, workspaceID string, status herdr.AgentStatus) *herdr.EventEnvelope {

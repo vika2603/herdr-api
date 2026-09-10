@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-api"
+	"github.com/vika2603/herdr-client"
 )
 
 func stageServer(t *testing.T, h *harness, _ *state) {
@@ -53,7 +53,7 @@ func stageServer(t *testing.T, h *harness, _ *state) {
 	// A headless server has no notification surface, so the response reports
 	// why it was not shown; the result type is what is under test.
 	shown, err := h.client.NotificationShow(h.ctx(t), herdr.NotificationShowParams{
-		Title: "herdr-api e2e",
+		Title: "herdr-client e2e",
 		Body:  ptr("end-to-end verification"),
 		Sound: herdr.NotificationShowSoundNone,
 	})
@@ -61,7 +61,7 @@ func stageServer(t *testing.T, h *harness, _ *state) {
 		t.Errorf("notification.show reported neither a surface nor a reason")
 	}
 
-	title, err := h.client.ClientWindowTitleSet(h.ctx(t), herdr.ClientWindowTitleSetParams{Title: "herdr-api e2e"})
+	title, err := h.client.ClientWindowTitleSet(h.ctx(t), herdr.ClientWindowTitleSetParams{Title: "herdr-client e2e"})
 	if h.cover(t, herdr.MethodClientWindowTitleSet, title, err) && title.Reason == "" {
 		t.Errorf("client.window_title.set reported no reason")
 	}
