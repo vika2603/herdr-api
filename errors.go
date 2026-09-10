@@ -28,6 +28,22 @@ const (
 	ErrCodeAgentPromptStalled          = "agent_prompt_stalled"
 	ErrCodeWorkspaceGroupCloseRequired = "workspace_group_close_required"
 	ErrCodeUnsupportedInAppMode        = "unsupported_in_app_mode"
+
+	// Codes internal/e2e observed against herdr 0.9.0 while exercising the
+	// methods that report them.
+	ErrCodeStaleAnnouncement         = "stale_announcement"
+	ErrCodeStaleReleaseNotes         = "stale_release_notes"
+	ErrCodeConnectionLocalOnly       = "connection_local_only"
+	ErrCodeCommandNotFound           = "command_not_found"
+	ErrCodeCellSizeUnavailable       = "cell_size_unavailable"
+	ErrCodeAgentNotReady             = "agent_not_ready"
+	ErrCodeUnsupportedAgentKind      = "unsupported_agent_kind"
+	ErrCodeInvalidAgentName          = "invalid_agent_name"
+	ErrCodeInvalidAgentView          = "invalid_agent_view"
+	ErrCodeInvalidStateLabel         = "invalid_state_label"
+	ErrCodeStaleContent              = "stale_content"
+	ErrCodeStaleTarget               = "stale_target"
+	ErrCodeUnsupportedEventWaitMatch = "unsupported_event_wait_match"
 )
 
 // Error is an error response from the server. Method is the method that was

@@ -463,3 +463,19 @@ to look, not a guarantee it still exists.
 The last column is why `schema/README.md` records the version a snapshot was
 taken from: an upgrade means re-reading those files at the new tag, not
 guessing from behaviour.
+
+## Where the server is narrower than the schema
+
+The schema states what a request may contain, not what the server accepts, so
+two methods take arguments the schema permits and herdr 0.9.0 refuses.
+`internal/e2e` found both.
+
+`events.wait` accepts every `EventMatch` variant in the schema, but 0.9.0
+matches only pane agent status; any other variant returns
+`unsupported_event_wait_match`. Wait on other events with `events.subscribe`
+instead.
+
+`worktree.create` without a `path` puts the checkout under the calling user's
+home, at `~/.herdr/worktrees/<repo>/<branch>`, not relative to `cwd`. Pass an
+explicit `path` when the location matters, which is what the e2e suite does so
+that it stays inside its temporary directory.
