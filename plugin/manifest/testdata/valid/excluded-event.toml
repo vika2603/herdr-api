@@ -1,0 +1,17 @@
+# pane.output_changed is a known EventKind, but herdr keeps it out of the
+# events a manifest hook may name and never fires the hook. Loading the
+# manifest succeeds with a warning.
+
+id = "example.output-watch"
+name = "Output Watch"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux", "macos", "windows"]
+
+[[events]]
+on = "pane.output_changed"
+command = ["true"]
+
+[[events]]
+on = "pane.exited"
+command = ["true"]

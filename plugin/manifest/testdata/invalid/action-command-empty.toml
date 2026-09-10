@@ -1,0 +1,10 @@
+id = "example.plugin"
+name = "Plugin"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux", "macos", "windows"]
+
+[[actions]]
+id = "apply"
+title = "Apply layout"
+command = []
