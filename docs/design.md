@@ -371,6 +371,11 @@ type Handlers struct {
 func Run(ctx context.Context, h Handlers) int
 ```
 
+This is the base the rest of the package rests on. A plugin normally
+registers a handler per entrypoint instead of writing the switch by hand; see
+"The plugin authoring layer", which also covers reading the invocation
+context, owning state and configuration, and testing without Herdr.
+
 `Env` is the environment Herdr injects into a plugin command. `Kind` reports
 which manifest entrypoint started the process: a startup hook sets
 `HERDR_PLUGIN_EVENT` to the literal `startup`, an event hook sets it to a
