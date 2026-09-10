@@ -84,7 +84,8 @@ func bind(h Handlers, env *Env, kind EntryKind) (func(context.Context) error, er
 		}
 		envelope, err := env.EventEnvelope()
 		if err != nil {
-			return nil, fmt.Errorf("plugin: event hook %s: %w", env.Event, err)
+			// The sentinel and decode errors already carry the package prefix.
+			return nil, fmt.Errorf("event hook %s: %w", env.Event, err)
 		}
 		return func(ctx context.Context) error { return h.Event(ctx, env, envelope) }, nil
 	case KindPane:
