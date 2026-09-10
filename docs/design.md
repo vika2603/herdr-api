@@ -381,9 +381,16 @@ stopped in cleanup. It never touches the caller's session. Its purpose is to
 prove `schema/method-results.json`, which the schema does not state and which
 was derived by reading herdr's handlers: every reachable method is called
 through its generated wrapper and its result type asserted, so a wrong mapping
-fails as a decode or assertion error. It currently exercises 82 of the 102
+fails as a decode or assertion error. It currently exercises 90 of the 102
 methods with no disagreements, and the coverage list is checked against the
 schema so a method can neither disappear nor go unexplained unnoticed.
+
+The eight plugin methods are among them. Linking a fixture manifest written
+inside the harness's own temporary directory reaches the registry and the
+plugin pane methods, because the registry follows `XDG_CONFIG_HOME`; the
+suite asserts that the caller's real registry is unchanged across the run,
+comparing contents rather than modification time, because a live server
+rewrites that file with identical contents.
 
 `just check` runs build, tests, lint and the generated-code check. `just e2e`
 runs the suite above. `just herdr-check` reports drift from the snapshot.
@@ -578,13 +585,15 @@ connection that stays open, so it needs a hand-written type beside the
 transport rather than a generated wrapper. `pane_graphics_frame_ack` is the
 one result variant no method in `method-results.json` returns, which fits.
 
-**The last 20 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
+**The last 12 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
 need a real agent process in the pane; a machine with a supported agent CLI
-could cover them and one without would skip. The eight plugin methods are
-reachable under the suite's temporary config home, which was measured rather
-than assumed: linking a fixture there writes the registry inside that
-directory and leaves the caller's own untouched. The rest need an attached
-client, a client shell endpoint, or state a fresh server does not have.
+could cover them and one without would skip. `client_shell.surface.set`,
+`command.invoke`, `popup.close` and `pane.graphics.info` need an attached
+client or the client shell endpoint. `product_announcement.dismiss` and
+`release_notes.dismiss` need state a fresh server does not have.
+`integration.install` and `integration.uninstall` write outside the
+temporary config home, into the user's own agent configuration.
+`server.live_handoff` would take down the suite's own server.
 
 **A tagged release.** There is none, so `go get` resolves a pseudo-version of
 the latest commit.
