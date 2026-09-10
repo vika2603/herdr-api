@@ -33,14 +33,6 @@ var outOfReach = map[string]string{
 	"agent.send_keys":              "needs an agent started through agent.start; a pane-reported agent is rejected with agent_not_ready",
 	"integration.install":          "writes the integration into the user's per-agent configuration, which lies outside the temporary XDG_CONFIG_HOME",
 	"integration.uninstall":        "removes an integration from the user's per-agent configuration, which lies outside the temporary XDG_CONFIG_HOME",
-	"plugin.link":                  "registering a plugin is outside the suite's remit, so no plugin is ever linked",
-	"plugin.unlink":                "needs a linked plugin, which the suite never creates",
-	"plugin.enable":                "needs a linked plugin; without one the server answers plugin_not_found",
-	"plugin.disable":               "needs a linked plugin; without one the server answers plugin_not_found",
-	"plugin.action.invoke":         "needs an action declared by a linked plugin",
-	"plugin.pane.open":             "needs a pane entrypoint declared by a linked plugin",
-	"plugin.pane.focus":            "needs an open plugin pane; without one the server answers plugin_pane_not_found",
-	"plugin.pane.close":            "needs an open plugin pane; without one the server answers plugin_pane_not_found",
 }
 
 // expectation is one entry of schema/method-results.json.

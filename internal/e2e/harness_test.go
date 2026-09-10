@@ -3,10 +3,12 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,6 +26,15 @@ const (
 	// XDG_CONFIG_HOME. It never resolves to the caller's default session.
 	// It is short because it is part of the socket path.
 	sessionName = "e2e"
+
+	// defaultSession names the session whose socket sits directly in the
+	// config directory. Resolving it is how the harness finds the config
+	// directory of whoever runs the suite.
+	defaultSession = "default"
+
+	// pluginRegistryFile is the file herdr records linked plugins in,
+	// relative to the config directory.
+	pluginRegistryFile = "plugins.json"
 
 	startTimeout = 30 * time.Second
 	stopTimeout  = 15 * time.Second
@@ -51,7 +62,8 @@ type harness struct {
 	client  *herdr.Client
 	trigger *herdr.Client
 
-	rec *recorder
+	rec      *recorder
+	registry registryState
 
 	mu        sync.Mutex
 	seq       int
@@ -59,6 +71,14 @@ type harness struct {
 
 	version  string
 	protocol uint32
+}
+
+// registryState is a plugin registry as it stood at one moment: whether the
+// file existed and what it held.
+type registryState struct {
+	path    string
+	exists  bool
+	content []byte
 }
 
 // tempBase is the directory the temporary root is created in. On Unix it is
@@ -71,9 +91,39 @@ func tempBase() string {
 	return "/tmp"
 }
 
+// callerRegistry reads the plugin registry of the config directory in
+// effect. It has to run before XDG_CONFIG_HOME is redirected at the temporary
+// root. ResolveSocketPath answers <config>/herdr.sock for the default
+// session, so its directory is the config directory, found by the same rules
+// herdr follows.
+func callerRegistry() (registryState, error) {
+	socket, err := herdr.ResolveSocketPath(defaultSession)
+	if err != nil {
+		return registryState{}, err
+	}
+	return readRegistry(filepath.Join(filepath.Dir(socket), pluginRegistryFile))
+}
+
+func readRegistry(path string) (registryState, error) {
+	content, err := os.ReadFile(path)
+	switch {
+	case err == nil:
+		return registryState{path: path, exists: true, content: content}, nil
+	case errors.Is(err, fs.ErrNotExist):
+		return registryState{path: path}, nil
+	default:
+		return registryState{path: path}, err
+	}
+}
+
 // newHarness prepares the temporary directories, resolves the socket path
 // through the transport's own resolver and starts the server.
 func newHarness() (*harness, error) {
+	registry, err := callerRegistry()
+	if err != nil {
+		return nil, fmt.Errorf("locate the plugin registry of the caller: %w", err)
+	}
+
 	binary, err := exec.LookPath("herdr")
 	if err != nil {
 		return nil, fmt.Errorf("herdr binary not found in PATH: %w", err)
@@ -105,6 +155,7 @@ func newHarness() (*harness, error) {
 		git:        gitBinary,
 		logPath:    filepath.Join(root, "server-stdout.log"),
 		rec:        newRecorder(),
+		registry:   registry,
 	}
 	for _, dir := range []string{filepath.Join(root, "state"), filepath.Join(root, "data"), filepath.Join(root, "cache"), filepath.Join(root, "tmp")} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -446,6 +497,28 @@ func (h *harness) expect(t *testing.T, method string) expectation {
 		t.Fatalf("%s is not listed in %s", method, methodsPath)
 	}
 	return want
+}
+
+// assertCallerRegistryUnchanged fails when the plugin registry outside the
+// harness differs from what it held before the server started. The suite
+// links a fixture plugin, and only the registry under its own
+// XDG_CONFIG_HOME may record it. Existence and content are compared rather
+// than the modification time: a running herdr rewrites that file with
+// identical content, which moves the timestamp although nothing changed.
+func (h *harness) assertCallerRegistryUnchanged(t *testing.T) {
+	t.Helper()
+	now, err := readRegistry(h.registry.path)
+	if err != nil {
+		t.Fatalf("read the plugin registry of the caller %s: %v", h.registry.path, err)
+	}
+	switch {
+	case now.exists != h.registry.exists:
+		t.Fatalf("the suite changed whether the plugin registry of the caller %s exists: %t before the run, %t now",
+			h.registry.path, h.registry.exists, now.exists)
+	case !bytes.Equal(now.content, h.registry.content):
+		t.Fatalf("the suite changed the plugin registry of the caller %s: %d bytes before the run, %d now",
+			h.registry.path, len(h.registry.content), len(now.content))
+	}
 }
 
 func marshal(value any) string {

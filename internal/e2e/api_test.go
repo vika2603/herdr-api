@@ -29,7 +29,8 @@ func TestAPISurface(t *testing.T) {
 		{"agent", stageAgent},
 		{"events", stageEvents},
 		{"worktree", stageWorktree},
-		{"plugin-registry", stagePluginRegistry},
+		{"plugin", stagePlugin},
+		{"integration", stageIntegration},
 		{"teardown", stageTeardown},
 		{"coverage", stageCoverage},
 	}

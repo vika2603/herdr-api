@@ -50,6 +50,10 @@ func stageTeardown(t *testing.T, h *harness, st *state) {
 // stageCoverage checks the report the suite is about to print: the schema, the
 // result table and the out of reach list have to agree with what ran.
 func stageCoverage(t *testing.T, h *harness, _ *state) {
+	// The suite linked a plugin, so the last thing it checks is that the
+	// registry it must not reach came through the run untouched.
+	h.assertCallerRegistryUnchanged(t)
+
 	for _, problem := range problems(methods, h.rec.covered()) {
 		t.Errorf("%s", problem)
 	}
