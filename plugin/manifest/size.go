@@ -22,15 +22,6 @@ type PopupSize struct {
 // IsPercent reports whether the size is a percentage of the terminal area.
 func (s PopupSize) IsPercent() bool { return s.Percent != 0 }
 
-// Resolve returns the size in cells for a terminal area of the given size.
-// Herdr clamps the result to its popup minimum afterwards.
-func (s PopupSize) Resolve(available uint16) uint16 {
-	if !s.IsPercent() {
-		return s.Cells
-	}
-	return uint16(uint32(available) * uint32(s.Percent) / 100)
-}
-
 // String returns the manifest spelling of the size.
 func (s PopupSize) String() string {
 	if s.IsPercent() {

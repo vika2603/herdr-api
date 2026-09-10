@@ -57,13 +57,11 @@ func TestPopupSize(t *testing.T) {
 		size        PopupSize
 		wantPercent bool
 		wantString  string
-		available   uint16
-		wantResolve uint16
 	}{
-		{name: "cells", size: PopupSize{Cells: 20}, wantString: "20", available: 100, wantResolve: 20},
-		{name: "percentage", size: PopupSize{Percent: 80}, wantPercent: true, wantString: "80%", available: 100, wantResolve: 80},
-		{name: "percentage rounds down", size: PopupSize{Percent: 33}, wantPercent: true, wantString: "33%", available: 10, wantResolve: 3},
-		{name: "percentage of a wide terminal", size: PopupSize{Percent: 100}, wantPercent: true, wantString: "100%", available: 65535, wantResolve: 65535},
+		{name: "cells", size: PopupSize{Cells: 20}, wantString: "20"},
+		{name: "zero cells", size: PopupSize{}, wantString: "0"},
+		{name: "percentage", size: PopupSize{Percent: 80}, wantPercent: true, wantString: "80%"},
+		{name: "full percentage", size: PopupSize{Percent: 100}, wantPercent: true, wantString: "100%"},
 	}
 
 	for _, tt := range tests {
@@ -73,9 +71,6 @@ func TestPopupSize(t *testing.T) {
 			}
 			if got := tt.size.String(); got != tt.wantString {
 				t.Errorf("String() = %q, want %q", got, tt.wantString)
-			}
-			if got := tt.size.Resolve(tt.available); got != tt.wantResolve {
-				t.Errorf("Resolve(%d) = %d, want %d", tt.available, got, tt.wantResolve)
 			}
 		})
 	}
