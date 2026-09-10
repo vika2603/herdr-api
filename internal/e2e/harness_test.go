@@ -369,8 +369,10 @@ func (h *harness) ctx(t *testing.T) context.Context {
 }
 
 // cover asserts that a wrapper answered with the result type
-// schema/method-results.json documents, and records the method as exercised.
-// A result type the table does not allow is recorded as a disagreement.
+// schema/method-results.json documents. The method counts as exercised as
+// soon as the server answered with a result type, so a type the table does
+// not allow is recorded both as coverage and as a disagreement; only a
+// failed call leaves the method uncovered.
 func (h *harness) cover(t *testing.T, method string, result herdr.Result, err error) bool {
 	t.Helper()
 	requestID := h.requestID()
@@ -381,22 +383,15 @@ func (h *harness) cover(t *testing.T, method string, result herdr.Result, err er
 		var unknown *herdr.UnknownResultError
 		switch {
 		case errors.As(err, &unexpected):
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unexpected.Got,
-				response: "wrapper rejected the result type; the response body was not kept",
-			})
-			t.Errorf("%s: %v", method, err)
+			h.disagree(method, requestID, want, unexpected.Got,
+				"the wrapper rejected the result type before the response was decoded")
 		case errors.As(err, &unknown):
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unknown.Type,
-				response: string(unknown.Data),
-			})
-			t.Errorf("%s: %v", method, err)
+			h.disagree(method, requestID, want, unknown.Type, string(unknown.Data))
 		default:
 			t.Errorf("%s (request %s): %v", method, requestID, err)
+			return false
 		}
+		t.Errorf("%s (request %s): %v", method, requestID, err)
 		return false
 	}
 	if result == nil {
@@ -405,17 +400,22 @@ func (h *harness) cover(t *testing.T, method string, result herdr.Result, err er
 	}
 
 	got := result.ResultType()
+	h.rec.record(method, call{requestID: requestID, resultType: got})
 	if !want.allows(got) {
-		h.rec.reportDisagreement(disagreement{
-			method: method, requestID: requestID,
-			want: want.String(), got: got,
-			response: marshal(result),
-		})
+		h.disagree(method, requestID, want, got, marshal(result))
 		t.Errorf("%s (request %s): result type %q, table says %s", method, requestID, got, want)
 		return false
 	}
-	h.rec.record(method, call{requestID: requestID, resultType: got})
 	return true
+}
+
+// disagree records a response that contradicts schema/method-results.json.
+func (h *harness) disagree(method, requestID string, want expectation, got, response string) {
+	h.rec.record(method, call{requestID: requestID, resultType: got})
+	h.rec.reportDisagreement(disagreement{
+		method: method, requestID: requestID,
+		want: want.String(), got: got, response: response,
+	})
 }
 
 // coverStream asserts the acknowledging result of a method that keeps its
