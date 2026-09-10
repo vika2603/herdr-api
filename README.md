@@ -172,31 +172,74 @@ log.Println(env.PluginID, env.Kind(), env.StateDir)
 ```
 
 `Kind` reports which manifest entrypoint started the process: a startup hook,
-an action, an event hook or a pane command. `Run` dispatches to a handler per
-kind and returns the exit code Herdr records in its plugin command log:
+an action, an event hook or a pane command. One binary usually serves several
+of them, so register a handler per entrypoint and let the registry pick:
 
 ```go
 func main() {
 	ctx, stop := plugin.ShutdownContext(context.Background())
 	defer stop()
 
-	os.Exit(plugin.Run(ctx, plugin.Handlers{
-		Event: func(ctx context.Context, env *plugin.Env, event *herdr.EventEnvelope) error {
-			return record(env, event)
-		},
-	}))
+	os.Exit(newPlugin().Run(ctx))
+}
+
+func newPlugin() *plugin.Plugin {
+	p := plugin.New()
+	p.Startup(onStartup)
+	p.Action("show", onShow)
+	p.Pane("board", onBoard)
+	plugin.OnEvent(p, onStatusChanged)
+	return p
+}
+
+func onStatusChanged(ctx context.Context, env *plugin.Env, e *herdr.PaneAgentStatusChangedEvent) error {
+	return env.AppendStateJSONL("log.jsonl", record{Pane: e.PaneID, Status: string(e.AgentStatus)})
 }
 ```
 
+`OnEvent` takes the event name from the handler's own payload type, so no
+event string is written twice. `Run` returns the exit code Herdr records in
+its plugin command log: 0 for a handler that returned nil, 1 for one that
+returned an error, and 2 when no handler ran at all. `plugin.Run(ctx,
+plugin.Handlers{…})` still dispatches by kind for a plugin that wants the
+switch itself.
+
 `ShutdownContext` matters for a pane entrypoint, which runs until the user
 closes the pane: closing it delivers SIGHUP and then SIGTERM, and the context
-ends on either. Durable state belongs under
-`env.StateDir` and user-editable configuration under `env.ConfigDir`; the
-plugin's own directory is a managed checkout when it was installed from
-GitHub.
+ends on either.
 
-`plugin/manifest` reads and validates a manifest with the same rules herdr
-applies, which is useful in a plugin's own tests and in tooling:
+`Env.Invocation` reads the invocation context with its optional fields
+flattened to values. Durable state belongs under `env.StateDir` and
+user-editable configuration under `env.ConfigDir`; `ReadState`, `WriteState`,
+their JSON forms and `AppendStateJSONL` address a file by name inside the
+state directory and write through a temporary file and a rename, so a crash
+mid-write cannot truncate what was there.
+
+### Testing a plugin
+
+`plugin/plugintest` builds the environment Herdr injects, so a handler test
+sets no environment variables and needs no server:
+
+```go
+func TestShow(t *testing.T) {
+	env := plugintest.Env(plugintest.Action("show"), plugintest.StateDir(t.TempDir()))
+	if err := newPlugin().Dispatch(context.Background(), env); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestManifest(t *testing.T) {
+	plugintest.CheckManifest(t, "herdr-plugin.toml", newPlugin())
+}
+```
+
+`Dispatch` runs the same selection `Run` does and returns the handler's error
+instead of an exit code. `CheckManifest` reports every disagreement between
+the manifest and the code: an id declared with no handler, a handler with no
+manifest entry, a handler for an event Herdr never fires a hook for, and
+every rule and warning herdr itself produces when it loads the manifest.
+
+`plugin/manifest` is that parser on its own, for tooling that has no registry:
 
 ```go
 m, warnings, err := manifest.Parse("herdr-plugin.toml")
@@ -204,16 +247,23 @@ m, warnings, err := manifest.Parse("herdr-plugin.toml")
 
 Warnings are returned separately from errors, matching herdr: an event hook
 naming an event that herdr never fires for hooks is a warning, a duplicate
-action id is an error.
+action id is an error. `manifest.HookEventNames` lists the events that are
+eligible.
+
+`examples/` holds worked plugins built on all of this.
 
 ## Layout
 
 | Path                               | Contents                                                                 |
 | ---------------------------------- | ------------------------------------------------------------------------ |
 | `.` (package `herdr`)              | Transport, plus the generated types, results, events and method wrappers |
-| `plugin`                           | The environment Herdr injects into plugin commands, and `Run`            |
+| `plugin`                           | The environment Herdr injects into plugin commands, and the registry     |
 | `plugin/manifest`                  | `herdr-plugin.toml` parsing and validation                               |
+| `plugin/plugintest`                | A plugin environment built in memory, and the manifest check             |
+| `examples`                         | Worked plugins                                                           |
 | `cmd/herdr-apigen`, `internal/gen` | The generator that produces `*_gen.go`                                   |
+| `internal/e2e`                     | The suite that proves the result types against a real server             |
+| `internal/cmd/herdrcheck`          | The drift report `just herdr-check` runs                                 |
 | `schema`                           | The schema snapshot and the method-to-result table                       |
 | `docs/design.md`                   | Protocol facts, generation rules and the development plan                |
 
@@ -249,8 +299,8 @@ it came from, because nothing regenerates them.
 
 ## Status
 
-The client, the session mirror, the plugin runtime and the manifest parser are
-usable. 82 of the 102 methods are exercised against a real server by
-`internal/e2e`; the rest need an attached client or a running agent. There is
-no tagged release yet, so `go get` resolves a pseudo-version of the latest
+The client, the session mirror, the plugin authoring layer and the manifest
+parser are usable. 90 of the 102 methods are exercised against a real server
+by `internal/e2e`; the rest need an attached client or a running agent. There
+is no tagged release yet, so `go get` resolves a pseudo-version of the latest
 commit. See `docs/design.md` for the design and what is planned next.
