@@ -741,6 +741,23 @@ func (c *sessionCache) focusPane(paneID string) {
 		agent.Focused = id == paneID
 		return agent
 	})
+
+	// A cached layout carries the focused pane of its own tab, and herdr
+	// emits no layout.updated when focus moves, which was measured against a
+	// running server: focusing a pane produces pane.focused alone, while
+	// layout.export already reports the new focused_pane_id. Without this the
+	// layout would keep naming whichever pane held focus when the layout was
+	// last reported. The field is per tab, so the other tabs keep theirs.
+	pane, ok := c.panes.get(paneID)
+	if !ok {
+		return
+	}
+	layout, ok := c.layouts.get(pane.TabID)
+	if !ok {
+		return
+	}
+	layout.FocusedPaneID = paneID
+	c.layouts.set(pane.TabID, layout)
 }
 
 // mergeAgent refreshes the fields an AgentInfo shares with the pane it runs

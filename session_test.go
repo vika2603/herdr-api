@@ -765,3 +765,37 @@ func TestSessionSnapshotTracksFocus(t *testing.T) {
 		t.Errorf("FocusedPaneID = %q, want none", *got)
 	}
 }
+
+// herdr emits no layout.updated when focus moves, so the mirror has to carry
+// the new focused pane into the layout of that pane's tab itself. Measured
+// against a running server: pane.focus produces pane.focused alone, while
+// layout.export already reports the new focused_pane_id.
+func TestSessionKeepsLayoutFocusCurrent(t *testing.T) {
+	// The shared fixture gives every tab one pane, so focus cannot move
+	// inside a layout. This one puts two panes in w1:t1.
+	snapshot := testSnapshot()
+	third := testPane("w1", "w1:t1", "w1:p3")
+	snapshot.Panes = append(snapshot.Panes, third)
+	snapshot.Layouts[0] = testLayout("w1", "w1:t1", "w1:p1", "w1:p3")
+
+	server := newMirrorServer(t, snapshot)
+	session := openTestSession(t, server)
+	stream := server.acceptStream()
+
+	if before, _ := session.Layout("w1:t1"); before.FocusedPaneID != "w1:p1" {
+		t.Fatalf("layout w1:t1 starts focused on %q, want w1:p1", before.FocusedPaneID)
+	}
+
+	applyEvent(t, session, stream, string(EventKindPaneFocused), PaneFocusedEvent{PaneID: "w1:p3", WorkspaceID: "w1"})
+
+	if moved, _ := session.Layout("w1:t1"); moved.FocusedPaneID != "w1:p3" {
+		t.Errorf("layout w1:t1 focused on %q, want w1:p3", moved.FocusedPaneID)
+	}
+	// The field is per tab, so another tab keeps the pane it had.
+	if untouched, _ := session.Layout("w1:t2"); untouched.FocusedPaneID != "w1:p2" {
+		t.Errorf("layout w1:t2 focused on %q, want it left at w1:p2", untouched.FocusedPaneID)
+	}
+	if got := Value(session.Snapshot().FocusedPaneID); got != "w1:p3" {
+		t.Errorf("snapshot FocusedPaneID = %q, want w1:p3", got)
+	}
+}

@@ -354,10 +354,16 @@ caller can drop anything it derived from the older state. Backoff is bounded
 by the context. A response that the server refuses, rather than a connection
 that failed, is not retried.
 
-Two behaviours were settled by experiment rather than by reading the schema.
+Three behaviours were settled by experiment rather than by reading the schema.
 Focus is exclusive across the session and herdr emits the whole chain, so
 focusing a workspace also produces `tab.focused` and `pane.focused`; the
-mirror can treat focus as a single flag without lagging. And `released` on
+mirror can treat focus as a single flag without lagging. A focus change emits
+no `layout.updated`, though, while `layout.export` already reports the new
+`focused_pane_id`, and that field belongs to one tab rather than the session:
+a second tab keeps naming its own pane. So `pane.focused` also moves the
+focused pane of the cached layout of that pane's tab, or `Snapshot` would
+hand back a layout naming whoever held focus when the layout was last
+reported. And `released` on
 `pane.agent_detected` means the agent handed the pane back to the shell, which
 `src/events.rs` calls `AppEvent::HookAgentReleased`, so the mirror drops the
 agent and keeps its final status.
