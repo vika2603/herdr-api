@@ -326,3 +326,30 @@ func waitForFrames(t *testing.T, server *graphicsServer, count int) {
 	}
 	t.Fatalf("server read %d frames, want %d", len(server.captured()), count)
 }
+
+// TestLivePaneGraphicsStreamReachesTheServer checks that the running server
+// accepts the method the schema does not declare. Opening a stream on a real
+// pane would reserve a layer, so this asks for a pane that cannot exist: the
+// request still passes the feature check and the pane lookup, which is as far
+// as a read-only call can go.
+func TestLivePaneGraphicsStreamReachesTheServer(t *testing.T) {
+	client := newLiveClient(t)
+	params := PaneGraphicsStreamParams{PaneID: "herdr-client-live-check:missing"}
+
+	stream, err := client.PaneGraphicsStream(testContext(t), params)
+	if err == nil {
+		_ = stream.Close()
+		t.Fatal("a stream opened on a pane that cannot exist")
+	}
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("open error = %v, want a server error", err)
+	}
+	switch apiErr.Code {
+	case ErrCodePaneNotFound:
+	case ErrCodeFeatureDisabled:
+		t.Skip("terminal.kitty_graphics is off on this server")
+	default:
+		t.Errorf("code = %q, want %s", apiErr.Code, ErrCodePaneNotFound)
+	}
+}
