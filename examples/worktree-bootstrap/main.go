@@ -10,10 +10,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"regexp"
 	"strings"
@@ -213,25 +211,15 @@ func agentPaneID(node herdr.LayoutNode) string {
 	}
 }
 
-// loadConfig reads the configuration file, falling back to the defaults for
-// every field it does not set. A plugin directory with no configuration file
-// is the normal case, and Env offers no read helper for the configuration
-// directory, so the absent file is handled here.
+// loadConfig reads the configuration file over the defaults. ReadConfigJSON
+// leaves them in place when the file is absent, which is the normal case, and
+// when it sets only some of the fields.
 func loadConfig(env *plugin.Env) (config, error) {
 	cfg := defaultConfig()
-	path := env.ConfigPath(configName)
-	if path == "" {
+	err := env.ReadConfigJSON(configName, &cfg)
+	if errors.Is(err, plugin.ErrNoConfigDir) {
+		// The command was run by hand rather than by Herdr.
 		return cfg, nil
 	}
-	data, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return cfg, nil
-	}
-	if err != nil {
-		return cfg, err
-	}
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return cfg, fmt.Errorf("decode %s: %w", path, err)
-	}
-	return cfg, nil
+	return cfg, err
 }

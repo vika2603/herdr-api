@@ -261,3 +261,48 @@ func TestWriteStateRawBytes(t *testing.T) {
 		t.Errorf("ReadState() = %q, %v, want it emptied", data, err)
 	}
 }
+
+func TestReadConfigJSON(t *testing.T) {
+	dir := t.TempDir()
+	env := &Env{ConfigDir: dir}
+
+	// The defaults survive a plugin the user has never configured.
+	cfg := settings{Theme: "dark", Limit: 5}
+	if err := env.ReadConfigJSON("config.json", &cfg); err != nil {
+		t.Fatalf("ReadConfigJSON() with no file = %v", err)
+	}
+	if cfg != (settings{Theme: "dark", Limit: 5}) {
+		t.Errorf("config = %+v, want the defaults untouched", cfg)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(`{"limit":9}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := env.ReadConfigJSON("config.json", &cfg); err != nil {
+		t.Fatalf("ReadConfigJSON() = %v", err)
+	}
+	if cfg != (settings{Theme: "dark", Limit: 9}) {
+		t.Errorf("config = %+v, want the file to override only what it sets", cfg)
+	}
+}
+
+func TestConfigHelpersReportAMissingDirectoryAndABrokenFile(t *testing.T) {
+	if _, err := (&Env{}).ReadConfig("config.json"); !errors.Is(err, ErrNoConfigDir) {
+		t.Errorf("ReadConfig() = %v, want ErrNoConfigDir", err)
+	}
+	if err := (&Env{}).ReadConfigJSON("config.json", &settings{}); !errors.Is(err, ErrNoConfigDir) {
+		t.Errorf("ReadConfigJSON() = %v, want ErrNoConfigDir", err)
+	}
+
+	env := &Env{ConfigDir: t.TempDir()}
+	if _, err := env.ReadConfig(filepath.Join("..", "escape")); err == nil {
+		t.Error("ReadConfig() accepted a name outside the directory")
+	}
+	if err := os.WriteFile(filepath.Join(env.ConfigDir, "config.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := env.ReadConfigJSON("config.json", &settings{})
+	if err == nil || !strings.Contains(err.Error(), "decode config config.json") {
+		t.Errorf("ReadConfigJSON() = %v, want it to name the file it could not decode", err)
+	}
+}

@@ -23,6 +23,10 @@ const dirPerm fs.FileMode = 0o755
 // outside Herdr.
 var ErrNoStateDir = errors.New("plugin: HERDR_PLUGIN_STATE_DIR is not set")
 
+// ErrNoConfigDir is returned by the configuration helpers when Herdr set no
+// HERDR_PLUGIN_CONFIG_DIR.
+var ErrNoConfigDir = errors.New("plugin: HERDR_PLUGIN_CONFIG_DIR is not set")
+
 // StatePath joins name to the directory Herdr gives the plugin for its own
 // state, HERDR_PLUGIN_STATE_DIR, and returns the state directory itself when
 // called with no arguments.
@@ -57,12 +61,18 @@ func (e *Env) ReadState(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return readFile(path, "state", name)
+}
+
+// readFile reports an absent file as no content, which both read helpers
+// treat as "nothing written yet" rather than as a failure.
+func readFile(path, kind, name string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("plugin: read state %s: %w", name, err)
+		return nil, fmt.Errorf("plugin: read %s %s: %w", kind, name, err)
 	}
 	return data, nil
 }
@@ -80,6 +90,36 @@ func (e *Env) ReadStateJSON(name string, into any) error {
 	}
 	if err := json.Unmarshal(data, into); err != nil {
 		return fmt.Errorf("plugin: decode state %s: %w", name, err)
+	}
+	return nil
+}
+
+// ReadConfig reads a file from the configuration directory, with the same
+// contract as ReadState: an absent file is not an error and reads as nil,
+// because a plugin the user has never configured is the normal case.
+//
+// There is no write counterpart. The configuration directory belongs to the
+// user, and a plugin that rewrote it would discard their comments and their
+// formatting; plugin-owned data belongs in the state directory.
+func (e *Env) ReadConfig(name string) ([]byte, error) {
+	path, err := e.configPath(name)
+	if err != nil {
+		return nil, err
+	}
+	return readFile(path, "config", name)
+}
+
+// ReadConfigJSON decodes a JSON file from the configuration directory into
+// into, with the same contract as ReadStateJSON: an absent or empty file
+// leaves into untouched, so a plugin decodes into a value already holding its
+// defaults.
+func (e *Env) ReadConfigJSON(name string, into any) error {
+	data, err := e.ReadConfig(name)
+	if err != nil || len(data) == 0 {
+		return err
+	}
+	if err := json.Unmarshal(data, into); err != nil {
+		return fmt.Errorf("plugin: decode config %s: %w", name, err)
 	}
 	return nil
 }
@@ -152,12 +192,20 @@ func (e *Env) AppendStateJSONL(name string, value any) error {
 // statePath resolves one name inside the state directory, distinguishing the
 // two reasons StatePath returns the empty string.
 func (e *Env) statePath(name string) (string, error) {
-	if e.StateDir == "" {
-		return "", ErrNoStateDir
+	return filePath(e.StateDir, "state", name, ErrNoStateDir)
+}
+
+func (e *Env) configPath(name string) (string, error) {
+	return filePath(e.ConfigDir, "config", name, ErrNoConfigDir)
+}
+
+func filePath(dir, kind, name string, absent error) (string, error) {
+	if dir == "" {
+		return "", absent
 	}
-	path, err := joinInside(e.StateDir, []string{name})
+	path, err := joinInside(dir, []string{name})
 	if err != nil {
-		return "", fmt.Errorf("plugin: state file %q: %w", name, err)
+		return "", fmt.Errorf("plugin: %s file %q: %w", kind, name, err)
 	}
 	return path, nil
 }

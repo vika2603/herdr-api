@@ -214,7 +214,9 @@ flattened to values. Durable state belongs under `env.StateDir` and
 user-editable configuration under `env.ConfigDir`; `ReadState`, `WriteState`,
 their JSON forms and `AppendStateJSONL` address a file by name inside the
 state directory and write through a temporary file and a rename, so a crash
-mid-write cannot truncate what was there.
+mid-write cannot truncate what was there. `ReadConfig` and `ReadConfigJSON`
+do the same for the configuration directory, which has no write counterpart
+because that directory belongs to the user.
 
 ### Testing a plugin
 

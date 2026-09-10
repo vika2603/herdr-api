@@ -602,6 +602,13 @@ directory, then a rename, so a crash mid-write cannot truncate what was there.
 A name that would escape the directory is rejected. That atomicity is the
 reason this belongs in the library rather than in each plugin.
 
+`ReadConfig` and `ReadConfigJSON` read the configuration directory on the
+same terms, an absent file included, because a plugin the user has never
+configured is the normal case and every configurable plugin would otherwise
+write that branch itself. There is no write counterpart: the configuration
+directory belongs to the user, and rewriting it would discard their comments
+and formatting.
+
 ### What is deliberately not included
 
 No wrapper for multi-step flows such as "split a pane, run a command, wait
