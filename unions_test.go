@@ -43,20 +43,20 @@ func TestLayoutNodeRoundTrip(t *testing.T) {
 			t.Errorf("encoded form %s does not contain %s", encoded, want)
 		}
 	}
-	root, ok := decoded.Root.(*LayoutNodeSplit)
+	root, ok := decoded.Root.(LayoutNodeSplit)
 	if !ok {
-		t.Fatalf("root is %T, want *LayoutNodeSplit", decoded.Root)
+		t.Fatalf("root is %T, want LayoutNodeSplit", decoded.Root)
 	}
-	pane, ok := root.First.(*LayoutNodePane)
+	pane, ok := root.First.(LayoutNodePane)
 	if !ok {
-		t.Fatalf("first child is %T, want *LayoutNodePane", root.First)
+		t.Fatalf("first child is %T, want LayoutNodePane", root.First)
 	}
 	if pane.Label == nil || *pane.Label != label {
 		t.Errorf("label = %v, want %q", pane.Label, label)
 	}
-	nested, ok := root.Second.(*LayoutNodeSplit)
+	nested, ok := root.Second.(LayoutNodeSplit)
 	if !ok {
-		t.Fatalf("second child is %T, want *LayoutNodeSplit", root.Second)
+		t.Fatalf("second child is %T, want LayoutNodeSplit", root.Second)
 	}
 	if nested.Ratio != 0.25 {
 		t.Errorf("nested ratio = %v, want 0.25", nested.Ratio)
@@ -83,16 +83,16 @@ func TestSubscriptionListRoundTrip(t *testing.T) {
 	if len(decoded.Subscriptions) != 2 {
 		t.Fatalf("decoded %d subscriptions, want 2", len(decoded.Subscriptions))
 	}
-	if _, ok := decoded.Subscriptions[0].(*PaneCreatedSubscription); !ok {
+	if _, ok := decoded.Subscriptions[0].(PaneCreatedSubscription); !ok {
 		t.Errorf("first subscription is %T", decoded.Subscriptions[0])
 	}
-	output, ok := decoded.Subscriptions[1].(*PaneOutputMatchedSubscription)
+	output, ok := decoded.Subscriptions[1].(PaneOutputMatchedSubscription)
 	if !ok {
 		t.Fatalf("second subscription is %T", decoded.Subscriptions[1])
 	}
-	match, ok := output.Match.(*OutputMatchRegex)
+	match, ok := output.Match.(OutputMatchRegex)
 	if !ok {
-		t.Fatalf("match is %T, want *OutputMatchRegex", output.Match)
+		t.Fatalf("match is %T, want OutputMatchRegex", output.Match)
 	}
 	if match.Value != "^done" {
 		t.Errorf("match value = %q", match.Value)
@@ -104,9 +104,9 @@ func TestEventMatchAndDestinationRoundTrip(t *testing.T) {
 	if !strings.Contains(encoded, `"event":"pane_closed"`) {
 		t.Errorf("encoded form %s has no event discriminator", encoded)
 	}
-	closed, ok := wait.MatchEvent.(*EventMatchPaneClosed)
+	closed, ok := wait.MatchEvent.(EventMatchPaneClosed)
 	if !ok {
-		t.Fatalf("match is %T, want *EventMatchPaneClosed", wait.MatchEvent)
+		t.Fatalf("match is %T, want EventMatchPaneClosed", wait.MatchEvent)
 	}
 	if closed.PaneID != "w1:p1" {
 		t.Errorf("pane id = %q", closed.PaneID)
@@ -120,7 +120,7 @@ func TestEventMatchAndDestinationRoundTrip(t *testing.T) {
 	if !strings.Contains(encoded, `"type":"new_tab"`) {
 		t.Errorf("encoded form %s has no type discriminator", encoded)
 	}
-	if _, ok := move.Destination.(*PaneMoveDestinationNewTab); !ok {
+	if _, ok := move.Destination.(PaneMoveDestinationNewTab); !ok {
 		t.Errorf("destination is %T", move.Destination)
 	}
 }
@@ -147,13 +147,13 @@ func TestOptionalUnionFieldStaysAbsent(t *testing.T) {
 	if !strings.Contains(encoded, `"op":"not"`) || !strings.Contains(encoded, `"op":"eq"`) {
 		t.Errorf("encoded form %s is missing an op discriminator", encoded)
 	}
-	not, ok := filtered.Filter.(*AgentViewFilterNot)
+	not, ok := filtered.Filter.(AgentViewFilterNot)
 	if !ok {
-		t.Fatalf("filter is %T, want *AgentViewFilterNot", filtered.Filter)
+		t.Fatalf("filter is %T, want AgentViewFilterNot", filtered.Filter)
 	}
-	eq, ok := not.Filter.(*AgentViewFilterEq)
+	eq, ok := not.Filter.(AgentViewFilterEq)
 	if !ok {
-		t.Fatalf("inner filter is %T, want *AgentViewFilterEq", not.Filter)
+		t.Fatalf("inner filter is %T, want AgentViewFilterEq", not.Filter)
 	}
 	if eq.Field.Builtin != AgentViewBuiltinFieldStatus {
 		t.Errorf("field = %+v", eq.Field)
@@ -174,11 +174,21 @@ func TestUnknownUnionVariantIsRejected(t *testing.T) {
 	}
 }
 
+// A value and a pointer both satisfy a union interface and encode alike, but
+// only the value form is what decoding produces, so a type switch written
+// against what the caller built also matches what a response carries.
 func TestUnionValueAndPointerImplementTheInterface(t *testing.T) {
 	var nodes []LayoutNode
 	nodes = append(nodes, LayoutNodePane{}, &LayoutNodePane{})
 	if len(nodes) != 2 {
 		t.Fatal("both forms must satisfy LayoutNode")
+	}
+	var decoded LayoutApplyParams
+	if err := json.Unmarshal([]byte(`{"root":{"type":"pane"}}`), &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, ok := decoded.Root.(LayoutNodePane); !ok {
+		t.Errorf("decoded root is %T, want the value form LayoutNodePane", decoded.Root)
 	}
 	encodedValue, err := json.Marshal(nodes[0])
 	if err != nil {

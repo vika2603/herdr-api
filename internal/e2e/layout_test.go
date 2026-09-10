@@ -24,7 +24,7 @@ func stageLayout(t *testing.T, h *harness, st *state) {
 		Ratio: 0.4,
 	})
 	if h.cover(t, herdr.MethodLayoutSetSplitRatio, ratio, err) {
-		if split, ok := ratio.Layout.Root.(*herdr.LayoutNodeSplit); ok && split.Ratio != 0.4 {
+		if split, ok := ratio.Layout.Root.(herdr.LayoutNodeSplit); ok && split.Ratio != 0.4 {
 			t.Errorf("layout.set_split_ratio reports ratio %v, asked for 0.4", split.Ratio)
 		}
 	}
@@ -57,13 +57,13 @@ func stageLayout(t *testing.T, h *harness, st *state) {
 
 func assertSplitOfPanes(t *testing.T, method string, root herdr.LayoutNode) {
 	t.Helper()
-	split, ok := root.(*herdr.LayoutNodeSplit)
+	split, ok := root.(herdr.LayoutNodeSplit)
 	if !ok {
 		t.Errorf("%s returned root %T, expected a split", method, root)
 		return
 	}
 	for name, child := range map[string]herdr.LayoutNode{"first": split.First, "second": split.Second} {
-		if _, ok := child.(*herdr.LayoutNodePane); !ok {
+		if _, ok := child.(herdr.LayoutNodePane); !ok {
 			t.Errorf("%s returned %s child %T, expected a pane", method, name, child)
 		}
 	}

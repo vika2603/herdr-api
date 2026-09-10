@@ -204,9 +204,9 @@ func bootstrap(ctx context.Context, client *herdr.Client, workspaceID string, p 
 // layout.apply, so they can only be read out of its answer.
 func agentPaneID(node herdr.LayoutNode) string {
 	switch node := node.(type) {
-	case *herdr.LayoutNodePane:
+	case herdr.LayoutNodePane:
 		return herdr.Value(node.PaneID)
-	case *herdr.LayoutNodeSplit:
+	case herdr.LayoutNodeSplit:
 		return agentPaneID(node.First)
 	default:
 		return ""

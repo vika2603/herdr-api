@@ -124,21 +124,21 @@ func TestPlanLayoutUsesTheCheckout(t *testing.T) {
 // agentPaneID walks a layout as layout.apply answers it, where every node is
 // a pointer and every pane carries the id the server assigned.
 func TestAgentPaneID(t *testing.T) {
-	applied := &herdr.LayoutNodeSplit{
+	applied := herdr.LayoutNodeSplit{
 		Direction: herdr.SplitDirectionRight,
 		Ratio:     0.6,
-		First: &herdr.LayoutNodeSplit{
+		First: herdr.LayoutNodeSplit{
 			Direction: herdr.SplitDirectionDown,
 			Ratio:     0.5,
-			First:     &herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-1")},
-			Second:    &herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-2")},
+			First:     herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-1")},
+			Second:    herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-2")},
 		},
-		Second: &herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-3")},
+		Second: herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-3")},
 	}
 	if got := agentPaneID(applied); got != "pane-1" {
 		t.Errorf("agentPaneID() = %q, want the leftmost pane", got)
 	}
-	if got := agentPaneID(&herdr.LayoutNodePane{}); got != "" {
+	if got := agentPaneID(herdr.LayoutNodePane{}); got != "" {
 		t.Errorf("agentPaneID() = %q for a pane without an id, want the empty string", got)
 	}
 }

@@ -191,6 +191,14 @@ func (v LayoutNodePane) MarshalJSON() ([]byte, error)   // injects "type":"pane"
 func decodeLayoutNode(data []byte) (LayoutNode, error)  // reads the discriminator, decodes the variant
 ```
 
+The marker and `MarshalJSON` take value receivers and the decoder returns the
+value form, so one spelling covers both directions. The decoder returned a
+pointer at first, which meant a caller wrote `LayoutNodePane{…}` to build a
+layout and `*LayoutNodePane` to read one back. Both forms satisfy the
+interface, so the wrong one compiles and matches nothing; writing
+`examples/worktree-bootstrap`, which touches both sides, is what made the cost
+visible.
+
 Structs with union-typed fields (including slices and pointers of them) get an
 `UnmarshalJSON` that first decodes into an auxiliary struct holding the union
 fields as `json.RawMessage`, then calls the matching `decodeX` per field.

@@ -156,6 +156,10 @@ const (
 
 // AgentViewFilter is a union of the types below, selected by the "op"
 // field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type AgentViewFilter interface {
 	isAgentViewFilter()
 }
@@ -173,37 +177,37 @@ func decodeAgentViewFilter(data []byte) (AgentViewFilter, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "any":
 		var value AgentViewFilterAny
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "not":
 		var value AgentViewFilterNot
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "eq":
 		var value AgentViewFilterEq
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "in":
 		var value AgentViewFilterIn
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "exists":
 		var value AgentViewFilterExists
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown AgentViewFilter %q", head.Tag)
 }
@@ -471,6 +475,10 @@ type ErrorBody struct {
 }
 
 // EventMatch is a union of the types below, selected by the "event" field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type EventMatch interface {
 	isEventMatch()
 }
@@ -488,115 +496,115 @@ func decodeEventMatch(data []byte) (EventMatch, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace_updated":
 		var value EventMatchWorkspaceUpdated
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace_closed":
 		var value EventMatchWorkspaceClosed
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace_renamed":
 		var value EventMatchWorkspaceRenamed
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace_moved":
 		var value EventMatchWorkspaceMoved
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace_focused":
 		var value EventMatchWorkspaceFocused
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab_created":
 		var value EventMatchTabCreated
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab_closed":
 		var value EventMatchTabClosed
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab_renamed":
 		var value EventMatchTabRenamed
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab_moved":
 		var value EventMatchTabMoved
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab_focused":
 		var value EventMatchTabFocused
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_created":
 		var value EventMatchPaneCreated
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_closed":
 		var value EventMatchPaneClosed
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_focused":
 		var value EventMatchPaneFocused
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_moved":
 		var value EventMatchPaneMoved
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_output_changed":
 		var value EventMatchPaneOutputChanged
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_exited":
 		var value EventMatchPaneExited
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_agent_detected":
 		var value EventMatchPaneAgentDetected
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane_agent_status_changed":
 		var value EventMatchPaneAgentStatusChanged
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown EventMatch %q", head.Tag)
 }
@@ -1118,6 +1126,10 @@ type LayoutExportParams struct {
 }
 
 // LayoutNode is a union of the types below, selected by the "type" field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type LayoutNode interface {
 	isLayoutNode()
 }
@@ -1135,13 +1147,13 @@ func decodeLayoutNode(data []byte) (LayoutNode, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "split":
 		var value LayoutNodeSplit
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown LayoutNode %q", head.Tag)
 }
@@ -1264,6 +1276,10 @@ const (
 )
 
 // OutputMatch is a union of the types below, selected by the "type" field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type OutputMatch interface {
 	isOutputMatch()
 }
@@ -1281,13 +1297,13 @@ func decodeOutputMatch(data []byte) (OutputMatch, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "regex":
 		var value OutputMatchRegex
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown OutputMatch %q", head.Tag)
 }
@@ -1624,6 +1640,10 @@ type PaneListParams struct {
 
 // PaneMoveDestination is a union of the types below, selected by the
 // "type" field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type PaneMoveDestination interface {
 	isPaneMoveDestination()
 }
@@ -1641,19 +1661,19 @@ func decodePaneMoveDestination(data []byte) (PaneMoveDestination, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "new_tab":
 		var value PaneMoveDestinationNewTab
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "new_workspace":
 		var value PaneMoveDestinationNewWorkspace
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown PaneMoveDestination %q", head.Tag)
 }
@@ -2409,6 +2429,10 @@ const (
 
 // Subscription is a union of the types below, selected by the "type"
 // field.
+//
+// Each variant satisfies the interface as a value, and decoding produces
+// values too, so one spelling works whether a union value is built here
+// or read out of a response.
 type Subscription interface {
 	isSubscription()
 }
@@ -2426,163 +2450,163 @@ func decodeSubscription(data []byte) (Subscription, error) {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.updated":
 		var value WorkspaceUpdatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.metadata_updated":
 		var value WorkspaceMetadataUpdatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.renamed":
 		var value WorkspaceRenamedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.moved":
 		var value WorkspaceMovedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.reordered":
 		var value WorkspaceReorderedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.closed":
 		var value WorkspaceClosedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "workspace.focused":
 		var value WorkspaceFocusedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "worktree.created":
 		var value WorktreeCreatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "worktree.opened":
 		var value WorktreeOpenedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "worktree.removed":
 		var value WorktreeRemovedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab.created":
 		var value TabCreatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab.closed":
 		var value TabClosedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab.focused":
 		var value TabFocusedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab.renamed":
 		var value TabRenamedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "tab.moved":
 		var value TabMovedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.created":
 		var value PaneCreatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.closed":
 		var value PaneClosedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.updated":
 		var value PaneUpdatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.focused":
 		var value PaneFocusedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.moved":
 		var value PaneMovedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.exited":
 		var value PaneExitedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.agent_detected":
 		var value PaneAgentDetectedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.output_matched":
 		var value PaneOutputMatchedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.agent_status_changed":
 		var value PaneAgentStatusChangedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "pane.scroll_changed":
 		var value PaneScrollChangedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	case "layout.updated":
 		var value LayoutUpdatedSubscription
 		if err := json.Unmarshal(data, &value); err != nil {
 			return nil, err
 		}
-		return &value, nil
+		return value, nil
 	}
 	return nil, fmt.Errorf("herdr: unknown Subscription %q", head.Tag)
 }

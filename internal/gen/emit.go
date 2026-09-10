@@ -123,7 +123,11 @@ func emitEnum(c *code, t *Type) {
 
 func emitUnion(c *code, t *Type) {
 	c.doc(fmt.Sprintf("%s is a union of the types below, selected by the %q field.",
-		t.Name, t.Discriminator))
+		t.Name, t.Discriminator),
+		"",
+		"Each variant satisfies the interface as a value, and decoding produces",
+		"values too, so one spelling works whether a union value is built here",
+		"or read out of a response.")
 	if t.Doc != "" {
 		c.doc("", t.Doc)
 	}
@@ -149,7 +153,7 @@ func emitUnionDecoder(c *code, t *Type) {
 		c.line("\t\tif err := json.Unmarshal(data, &value); err != nil {")
 		c.line("\t\t\treturn nil, err")
 		c.line("\t\t}")
-		c.line("\t\treturn &value, nil")
+		c.line("\t\treturn value, nil")
 	}
 	c.line("\t}")
 	c.printf("\treturn nil, fmt.Errorf(\"herdr: unknown %s %%q\", head.Tag)\n", t.Name)
