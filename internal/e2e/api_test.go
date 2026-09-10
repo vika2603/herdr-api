@@ -21,6 +21,8 @@ func TestAPISurface(t *testing.T) {
 		run  func(*testing.T, *harness, *state)
 	}{
 		{"server", stageServer},
+		{"workspace", stageWorkspace},
+		{"tab", stageTab},
 	}
 
 	var st state
