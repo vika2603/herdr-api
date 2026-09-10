@@ -257,6 +257,7 @@ eligible.
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `examples/agent-status`  | A startup hook, an event hook and an action in one binary, over plugin state |
 | `examples/agent-board`   | A pane entrypoint on the session mirror, redrawn until the pane closes       |
+| `examples/worktree-bootstrap` | A link handler that opens a worktree, lays out its panes and starts an agent |
 
 ## Layout
 
