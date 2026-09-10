@@ -682,5 +682,7 @@ because integrations are written under the user's own home rather than under
 default worktree location, `~/.herdr/worktrees`, moved inside the harness
 root with them.
 
-**A tagged release.** There is none, so `go get` resolves a pseudo-version of
-the latest commit.
+**A stable API.** v0.1.0 is the first tagged release, cut once the package
+move to `herdr/` had settled the import path. It is a v0, so the API may
+still change between minor versions; a v1 would be a promise the surface is
+finished, which several of this release's own additions argue against.

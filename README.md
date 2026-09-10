@@ -335,6 +335,8 @@ it came from, because nothing regenerates them.
 
 The client, the session mirror, the plugin authoring layer and the manifest
 parser are usable. 92 of the 102 methods are exercised against a real server
-by `internal/e2e`; the rest need an attached client or a running agent. There
-is no tagged release yet, so `go get` resolves a pseudo-version of the latest
-commit. See `docs/design.md` for the design and what is planned next.
+by `internal/e2e`; the rest need an attached client or a running agent.
+
+The current release is v0.1.0. It is a v0, so the API can still change
+between minor versions: pin the version you build against. See
+`docs/design.md` for the design and what is planned next.
