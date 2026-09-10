@@ -420,3 +420,46 @@ the `pane.graphics.*` helpers that would make it usable.
 
 Rerun that comparison after a schema refresh: a method that appears in the
 error list but not in the snapshot is a method this module cannot reach.
+
+## Following a new herdr release
+
+Three kinds of change arrive with a release, and they are found in different
+ways. Run `just herdr-check` first: it compares the installed binary's schema
+and the running server against the snapshot, and exits non-zero on any
+difference that `schema/known-gaps.json` does not already account for.
+
+**Changes the schema describes** are handled by regenerating. `just
+schema-update && just gen && just check` rewrites the snapshot and the
+generated code. The generator fails when a method in the schema has no entry
+in `schema/method-results.json` and when that file names a method or result
+type that no longer exists, so an added or removed method cannot pass
+silently. A changed field type becomes a compile error in whatever uses it. A
+new enum value simply appears; decoding an unknown one still works because the
+enums are strings.
+
+**Which result type a method returns** is not in the schema, so a change there
+would leave `method-results.json` quietly wrong. `internal/e2e` is the guard:
+it calls each reachable method through its generated wrapper and asserts on the
+decoded result type, so a changed mapping fails as a decode or assertion error.
+Run `just e2e` after regenerating.
+
+**Behaviour the schema does not describe** is the part with no automatic
+guard. Each item below was read out of the herdr sources at v0.9.0 and has to
+be re-read when the version this module targets changes. The file is the place
+to look, not a guarantee it still exists.
+
+| Fact | Where it came from |
+| --- | --- |
+| One request per connection; only `events.subscribe` keeps the connection open | `src/api/server.rs`, `handle_connection` and `stream_subscriptions` |
+| Socket path resolution and the session name rules | `src/session.rs`, `api_socket_path_for` and `validate_name` |
+| The config directory chain, including `herdr-dev` for debug builds | `src/config/io.rs`, `config_dir`, `platform_config_dir` and `app_dir_name` |
+| The environment injected into plugin commands | `src/app/api/plugins/runtime.rs` and `src/app/api/plugins/panes.rs` |
+| Manifest validation rules, limits and error codes | `src/app/api/plugins/manifest.rs` |
+| The 22 events a manifest hook may name, narrower than the 26 `EventKind` values | `src/api/schema/events.rs`, `PLUGIN_HOOK_EVENT_KINDS` |
+| Popup size parsing, integer or percentage | `src/popup_size.rs` |
+| `released` on `pane.agent_detected` meaning the agent handed the pane back | `src/events.rs`, `AppEvent::HookAgentReleased` |
+| The set of error codes | `encode_error` callers across `src/app/api/` |
+
+The last column is why `schema/README.md` records the version a snapshot was
+taken from: an upgrade means re-reading those files at the new tag, not
+guessing from behaviour.

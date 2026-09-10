@@ -1,0 +1,7 @@
+{
+  "_comment": "Differences between the running server and the schema snapshot that are understood and accepted. herdrcheck reports these as known and fails only on drift that is not listed here. Remove an entry once the gap closes.",
+  "herdr_version": "0.9.0",
+  "server_methods_absent_from_schema": {
+    "pane.graphics.stream": "Its framing is not newline-delimited JSON: after the acknowledgement the client sends a JSON header followed by exactly data_length raw bytes per frame, so it cannot be a generated wrapper. See the known gaps section of docs/design.md."
+  }
+}

@@ -26,6 +26,12 @@ check: build test lint check-gen
 e2e:
     go test -tags e2e -count=1 -v ./internal/e2e/...
 
+# Report how far the installed herdr and the running server have moved from
+# the schema snapshot. Exits non-zero on drift that known-gaps.json does not
+# already account for.
+herdr-check:
+    go run ./internal/cmd/herdrcheck
+
 # Refresh the schema snapshot from the installed herdr binary.
 schema-update:
     herdr api schema --output schema/herdr-api.schema.json
