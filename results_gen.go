@@ -7,7 +7,9 @@ import (
 	"fmt"
 )
 
-// Result is a decoded result object of a successful response.
+// Result is the decoded result object of a successful response. Every
+// variant is named after its "type" value with a Response suffix, for
+// example PaneInfoResponse for "pane_info".
 type Result interface {
 	// ResultType returns the value of the result's "type" field.
 	ResultType() string
@@ -24,385 +26,385 @@ func DecodeResult(raw json.RawMessage) (Result, error) {
 	}
 	switch head.Type {
 	case "agent_explain":
-		var value AgentExplainResult
+		var value AgentExplainResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_info":
-		var value AgentInfoResult
+		var value AgentInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_list":
-		var value AgentListResult
+		var value AgentListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_manifest_reload":
-		var value AgentManifestReloadResult
+		var value AgentManifestReloadResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_manifest_status":
-		var value AgentManifestStatusResult
+		var value AgentManifestStatusResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_prompted":
-		var value AgentPromptedResult
+		var value AgentPromptedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_started":
-		var value AgentStartedResult
+		var value AgentStartedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "agent_view":
-		var value AgentViewResult
+		var value AgentViewResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "client_shell_surface_set":
-		var value ClientShellSurfaceSetResult
+		var value ClientShellSurfaceSetResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "client_window_title":
-		var value ClientWindowTitleResult
+		var value ClientWindowTitleResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "config_reload":
-		var value ConfigReloadResult
+		var value ConfigReloadResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "integration_install":
-		var value IntegrationInstallResponseResult
+		var value IntegrationInstallResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "integration_list":
-		var value IntegrationListResult
+		var value IntegrationListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "integration_uninstall":
-		var value IntegrationUninstallResponseResult
+		var value IntegrationUninstallResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "layout_apply":
-		var value LayoutApplyResult
+		var value LayoutApplyResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "layout_export":
-		var value LayoutExportResult
+		var value LayoutExportResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "layout_split_ratio_set":
-		var value LayoutSplitRatioSetResult
+		var value LayoutSplitRatioSetResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "notification_show":
-		var value NotificationShowResult
+		var value NotificationShowResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "ok":
-		var value OKResult
+		var value OKResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "output_matched":
-		var value OutputMatchedResult
+		var value OutputMatchedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_copy_motion":
-		var value PaneCopyMotionResult
+		var value PaneCopyMotionResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_copy_search":
-		var value PaneCopySearchResult
+		var value PaneCopySearchResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_current":
-		var value PaneCurrentResult
+		var value PaneCurrentResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_edges":
-		var value PaneEdgesResponseResult
+		var value PaneEdgesResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_focus_direction":
-		var value PaneFocusDirectionResponseResult
+		var value PaneFocusDirectionResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_graphics_frame_ack":
-		var value PaneGraphicsFrameAckResult
+		var value PaneGraphicsFrameAckResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_graphics_info":
-		var value PaneGraphicsInfoResult
+		var value PaneGraphicsInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_info":
-		var value PaneInfoResult
+		var value PaneInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_layout":
-		var value PaneLayoutResult
+		var value PaneLayoutResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_link_activated":
-		var value PaneLinkActivatedResult
+		var value PaneLinkActivatedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_list":
-		var value PaneListResult
+		var value PaneListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_move":
-		var value PaneMoveResponseResult
+		var value PaneMoveResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_neighbor":
-		var value PaneNeighborResponseResult
+		var value PaneNeighborResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_process_info":
-		var value PaneProcessInfoResult
+		var value PaneProcessInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_read":
-		var value PaneReadResponseResult
+		var value PaneReadResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_resize":
-		var value PaneResizeResponseResult
+		var value PaneResizeResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_selection":
-		var value PaneSelectionResult
+		var value PaneSelectionResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_swap":
-		var value PaneSwapResponseResult
+		var value PaneSwapResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pane_zoom":
-		var value PaneZoomResponseResult
+		var value PaneZoomResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_action_invoked":
-		var value PluginActionInvokedResult
+		var value PluginActionInvokedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_action_list":
-		var value PluginActionListResult
+		var value PluginActionListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_disabled":
-		var value PluginDisabledResult
+		var value PluginDisabledResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_enabled":
-		var value PluginEnabledResult
+		var value PluginEnabledResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_linked":
-		var value PluginLinkedResult
+		var value PluginLinkedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_list":
-		var value PluginListResult
+		var value PluginListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_log_list":
-		var value PluginLogListResult
+		var value PluginLogListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_pane_closed":
-		var value PluginPaneClosedResult
+		var value PluginPaneClosedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_pane_focused":
-		var value PluginPaneFocusedResult
+		var value PluginPaneFocusedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_pane_opened":
-		var value PluginPaneOpenedResult
+		var value PluginPaneOpenedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "plugin_unlinked":
-		var value PluginUnlinkedResult
+		var value PluginUnlinkedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "pong":
-		var value PongResult
+		var value PongResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "session_snapshot":
-		var value SessionSnapshotResult
+		var value SessionSnapshotResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "subscription_started":
-		var value SubscriptionStartedResult
+		var value SubscriptionStartedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "tab_created":
-		var value TabCreatedResult
+		var value TabCreatedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "tab_info":
-		var value TabInfoResult
+		var value TabInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "tab_list":
-		var value TabListResult
+		var value TabListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "wait_matched":
-		var value WaitMatchedResult
+		var value WaitMatchedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "workspace_created":
-		var value WorkspaceCreatedResult
+		var value WorkspaceCreatedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "workspace_info":
-		var value WorkspaceInfoResult
+		var value WorkspaceInfoResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "workspace_list":
-		var value WorkspaceListResult
+		var value WorkspaceListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "worktree_created":
-		var value WorktreeCreatedResult
+		var value WorktreeCreatedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "worktree_list":
-		var value WorktreeListResult
+		var value WorktreeListResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "worktree_opened":
-		var value WorktreeOpenedResult
+		var value WorktreeOpenedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
 		return &value, nil
 	case "worktree_removed":
-		var value WorktreeRemovedResult
+		var value WorktreeRemovedResponse
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, err
 		}
@@ -435,345 +437,344 @@ func (e *UnexpectedResultError) Error() string {
 	return fmt.Sprintf("herdr: %s: expected result type %q, got %q", e.Method, e.Want, e.Got)
 }
 
-// AgentExplainResult is the "agent_explain" result.
-type AgentExplainResult struct {
+// AgentExplainResponse is the "agent_explain" result.
+type AgentExplainResponse struct {
 	Explain json.RawMessage `json:"explain"`
 }
 
 // ResultType returns "agent_explain".
-func (AgentExplainResult) ResultType() string { return "agent_explain" }
+func (AgentExplainResponse) ResultType() string { return "agent_explain" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentExplainResult) MarshalJSON() ([]byte, error) {
-	type alias AgentExplainResult
+func (v AgentExplainResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentExplainResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_explain", alias: alias(v)})
 }
 
-// AgentInfoResult is the "agent_info" result.
-type AgentInfoResult struct {
+// AgentInfoResponse is the "agent_info" result.
+type AgentInfoResponse struct {
 	Agent AgentInfo `json:"agent"`
 }
 
 // ResultType returns "agent_info".
-func (AgentInfoResult) ResultType() string { return "agent_info" }
+func (AgentInfoResponse) ResultType() string { return "agent_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentInfoResult) MarshalJSON() ([]byte, error) {
-	type alias AgentInfoResult
+func (v AgentInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_info", alias: alias(v)})
 }
 
-// AgentListResult is the "agent_list" result.
-type AgentListResult struct {
+// AgentListResponse is the "agent_list" result.
+type AgentListResponse struct {
 	Agents []AgentInfo `json:"agents"`
 }
 
 // ResultType returns "agent_list".
-func (AgentListResult) ResultType() string { return "agent_list" }
+func (AgentListResponse) ResultType() string { return "agent_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentListResult) MarshalJSON() ([]byte, error) {
-	type alias AgentListResult
+func (v AgentListResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_list", alias: alias(v)})
 }
 
-// AgentManifestReloadResult is the "agent_manifest_reload" result.
-type AgentManifestReloadResult struct {
+// AgentManifestReloadResponse is the "agent_manifest_reload" result.
+type AgentManifestReloadResponse struct {
 	Manifests []AgentManifestInfo `json:"manifests"`
 }
 
 // ResultType returns "agent_manifest_reload".
-func (AgentManifestReloadResult) ResultType() string { return "agent_manifest_reload" }
+func (AgentManifestReloadResponse) ResultType() string { return "agent_manifest_reload" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentManifestReloadResult) MarshalJSON() ([]byte, error) {
-	type alias AgentManifestReloadResult
+func (v AgentManifestReloadResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentManifestReloadResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_manifest_reload", alias: alias(v)})
 }
 
-// AgentManifestStatusResult is the "agent_manifest_status" result.
-type AgentManifestStatusResult struct {
+// AgentManifestStatusResponse is the "agent_manifest_status" result.
+type AgentManifestStatusResponse struct {
 	LastCheckUnix *uint64             `json:"last_check_unix,omitempty"`
 	LastResult    *string             `json:"last_result,omitempty"`
 	Manifests     []AgentManifestInfo `json:"manifests"`
 }
 
 // ResultType returns "agent_manifest_status".
-func (AgentManifestStatusResult) ResultType() string { return "agent_manifest_status" }
+func (AgentManifestStatusResponse) ResultType() string { return "agent_manifest_status" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentManifestStatusResult) MarshalJSON() ([]byte, error) {
-	type alias AgentManifestStatusResult
+func (v AgentManifestStatusResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentManifestStatusResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_manifest_status", alias: alias(v)})
 }
 
-// AgentPromptedResult is the "agent_prompted" result.
-type AgentPromptedResult struct {
+// AgentPromptedResponse is the "agent_prompted" result.
+type AgentPromptedResponse struct {
 	Agent AgentInfo `json:"agent"`
 }
 
 // ResultType returns "agent_prompted".
-func (AgentPromptedResult) ResultType() string { return "agent_prompted" }
+func (AgentPromptedResponse) ResultType() string { return "agent_prompted" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentPromptedResult) MarshalJSON() ([]byte, error) {
-	type alias AgentPromptedResult
+func (v AgentPromptedResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentPromptedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_prompted", alias: alias(v)})
 }
 
-// AgentStartedResult is the "agent_started" result.
-type AgentStartedResult struct {
+// AgentStartedResponse is the "agent_started" result.
+type AgentStartedResponse struct {
 	Agent AgentInfo `json:"agent"`
 	Argv  []string  `json:"argv"`
 }
 
 // ResultType returns "agent_started".
-func (AgentStartedResult) ResultType() string { return "agent_started" }
+func (AgentStartedResponse) ResultType() string { return "agent_started" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentStartedResult) MarshalJSON() ([]byte, error) {
-	type alias AgentStartedResult
+func (v AgentStartedResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentStartedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_started", alias: alias(v)})
 }
 
-// AgentViewResult is the "agent_view" result.
-type AgentViewResult struct {
+// AgentViewResponse is the "agent_view" result.
+type AgentViewResponse struct {
 	Active bool    `json:"active"`
 	Label  *string `json:"label,omitempty"`
 	Source *string `json:"source,omitempty"`
 }
 
 // ResultType returns "agent_view".
-func (AgentViewResult) ResultType() string { return "agent_view" }
+func (AgentViewResponse) ResultType() string { return "agent_view" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v AgentViewResult) MarshalJSON() ([]byte, error) {
-	type alias AgentViewResult
+func (v AgentViewResponse) MarshalJSON() ([]byte, error) {
+	type alias AgentViewResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "agent_view", alias: alias(v)})
 }
 
-// ClientShellSurfaceSetResult is the "client_shell_surface_set" result.
+// ClientShellSurfaceSetResponse is the "client_shell_surface_set" result.
 //
 // Acknowledgement for the client-shell surface interest lease. This method
 // is new on the endpoint protocol, so its revision-bearing result can
 // establish an activation floor.
-type ClientShellSurfaceSetResult struct {
+type ClientShellSurfaceSetResponse struct {
 	Active             bool   `json:"active"`
 	ProjectionRevision uint64 `json:"projection_revision"`
 }
 
 // ResultType returns "client_shell_surface_set".
-func (ClientShellSurfaceSetResult) ResultType() string { return "client_shell_surface_set" }
+func (ClientShellSurfaceSetResponse) ResultType() string { return "client_shell_surface_set" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v ClientShellSurfaceSetResult) MarshalJSON() ([]byte, error) {
-	type alias ClientShellSurfaceSetResult
+func (v ClientShellSurfaceSetResponse) MarshalJSON() ([]byte, error) {
+	type alias ClientShellSurfaceSetResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "client_shell_surface_set", alias: alias(v)})
 }
 
-// ClientWindowTitleResult is the "client_window_title" result.
-type ClientWindowTitleResult struct {
+// ClientWindowTitleResponse is the "client_window_title" result.
+type ClientWindowTitleResponse struct {
 	Changed bool                    `json:"changed"`
 	Reason  ClientWindowTitleReason `json:"reason"`
 }
 
 // ResultType returns "client_window_title".
-func (ClientWindowTitleResult) ResultType() string { return "client_window_title" }
+func (ClientWindowTitleResponse) ResultType() string { return "client_window_title" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v ClientWindowTitleResult) MarshalJSON() ([]byte, error) {
-	type alias ClientWindowTitleResult
+func (v ClientWindowTitleResponse) MarshalJSON() ([]byte, error) {
+	type alias ClientWindowTitleResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "client_window_title", alias: alias(v)})
 }
 
-// ConfigReloadResult is the "config_reload" result.
-type ConfigReloadResult struct {
+// ConfigReloadResponse is the "config_reload" result.
+type ConfigReloadResponse struct {
 	Diagnostics []string           `json:"diagnostics"`
 	Status      ConfigReloadStatus `json:"status"`
 }
 
 // ResultType returns "config_reload".
-func (ConfigReloadResult) ResultType() string { return "config_reload" }
+func (ConfigReloadResponse) ResultType() string { return "config_reload" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v ConfigReloadResult) MarshalJSON() ([]byte, error) {
-	type alias ConfigReloadResult
+func (v ConfigReloadResponse) MarshalJSON() ([]byte, error) {
+	type alias ConfigReloadResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "config_reload", alias: alias(v)})
 }
 
-// IntegrationInstallResponseResult is the "integration_install" result.
-type IntegrationInstallResponseResult struct {
+// IntegrationInstallResponse is the "integration_install" result.
+type IntegrationInstallResponse struct {
 	Details IntegrationInstallResult `json:"details"`
 	Target  IntegrationTarget        `json:"target"`
 }
 
 // ResultType returns "integration_install".
-func (IntegrationInstallResponseResult) ResultType() string { return "integration_install" }
+func (IntegrationInstallResponse) ResultType() string { return "integration_install" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v IntegrationInstallResponseResult) MarshalJSON() ([]byte, error) {
-	type alias IntegrationInstallResponseResult
+func (v IntegrationInstallResponse) MarshalJSON() ([]byte, error) {
+	type alias IntegrationInstallResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "integration_install", alias: alias(v)})
 }
 
-// IntegrationListResult is the "integration_list" result.
-type IntegrationListResult struct {
+// IntegrationListResponse is the "integration_list" result.
+type IntegrationListResponse struct {
 	Integrations []IntegrationInfo `json:"integrations"`
 }
 
 // ResultType returns "integration_list".
-func (IntegrationListResult) ResultType() string { return "integration_list" }
+func (IntegrationListResponse) ResultType() string { return "integration_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v IntegrationListResult) MarshalJSON() ([]byte, error) {
-	type alias IntegrationListResult
+func (v IntegrationListResponse) MarshalJSON() ([]byte, error) {
+	type alias IntegrationListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "integration_list", alias: alias(v)})
 }
 
-// IntegrationUninstallResponseResult is the "integration_uninstall"
-// result.
-type IntegrationUninstallResponseResult struct {
+// IntegrationUninstallResponse is the "integration_uninstall" result.
+type IntegrationUninstallResponse struct {
 	Details IntegrationUninstallResult `json:"details"`
 	Target  IntegrationTarget          `json:"target"`
 }
 
 // ResultType returns "integration_uninstall".
-func (IntegrationUninstallResponseResult) ResultType() string { return "integration_uninstall" }
+func (IntegrationUninstallResponse) ResultType() string { return "integration_uninstall" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v IntegrationUninstallResponseResult) MarshalJSON() ([]byte, error) {
-	type alias IntegrationUninstallResponseResult
+func (v IntegrationUninstallResponse) MarshalJSON() ([]byte, error) {
+	type alias IntegrationUninstallResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "integration_uninstall", alias: alias(v)})
 }
 
-// LayoutApplyResult is the "layout_apply" result.
-type LayoutApplyResult struct {
+// LayoutApplyResponse is the "layout_apply" result.
+type LayoutApplyResponse struct {
 	Layout LayoutDescription `json:"layout"`
 }
 
 // ResultType returns "layout_apply".
-func (LayoutApplyResult) ResultType() string { return "layout_apply" }
+func (LayoutApplyResponse) ResultType() string { return "layout_apply" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v LayoutApplyResult) MarshalJSON() ([]byte, error) {
-	type alias LayoutApplyResult
+func (v LayoutApplyResponse) MarshalJSON() ([]byte, error) {
+	type alias LayoutApplyResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "layout_apply", alias: alias(v)})
 }
 
-// LayoutExportResult is the "layout_export" result.
-type LayoutExportResult struct {
+// LayoutExportResponse is the "layout_export" result.
+type LayoutExportResponse struct {
 	Layout LayoutDescription `json:"layout"`
 }
 
 // ResultType returns "layout_export".
-func (LayoutExportResult) ResultType() string { return "layout_export" }
+func (LayoutExportResponse) ResultType() string { return "layout_export" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v LayoutExportResult) MarshalJSON() ([]byte, error) {
-	type alias LayoutExportResult
+func (v LayoutExportResponse) MarshalJSON() ([]byte, error) {
+	type alias LayoutExportResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "layout_export", alias: alias(v)})
 }
 
-// LayoutSplitRatioSetResult is the "layout_split_ratio_set" result.
-type LayoutSplitRatioSetResult struct {
+// LayoutSplitRatioSetResponse is the "layout_split_ratio_set" result.
+type LayoutSplitRatioSetResponse struct {
 	Layout LayoutDescription `json:"layout"`
 }
 
 // ResultType returns "layout_split_ratio_set".
-func (LayoutSplitRatioSetResult) ResultType() string { return "layout_split_ratio_set" }
+func (LayoutSplitRatioSetResponse) ResultType() string { return "layout_split_ratio_set" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v LayoutSplitRatioSetResult) MarshalJSON() ([]byte, error) {
-	type alias LayoutSplitRatioSetResult
+func (v LayoutSplitRatioSetResponse) MarshalJSON() ([]byte, error) {
+	type alias LayoutSplitRatioSetResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "layout_split_ratio_set", alias: alias(v)})
 }
 
-// NotificationShowResult is the "notification_show" result.
-type NotificationShowResult struct {
+// NotificationShowResponse is the "notification_show" result.
+type NotificationShowResponse struct {
 	Reason NotificationShowReason `json:"reason"`
 	Shown  bool                   `json:"shown"`
 }
 
 // ResultType returns "notification_show".
-func (NotificationShowResult) ResultType() string { return "notification_show" }
+func (NotificationShowResponse) ResultType() string { return "notification_show" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v NotificationShowResult) MarshalJSON() ([]byte, error) {
-	type alias NotificationShowResult
+func (v NotificationShowResponse) MarshalJSON() ([]byte, error) {
+	type alias NotificationShowResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "notification_show", alias: alias(v)})
 }
 
-// OKResult is the "ok" result.
-type OKResult struct{}
+// OKResponse is the "ok" result.
+type OKResponse struct{}
 
 // ResultType returns "ok".
-func (OKResult) ResultType() string { return "ok" }
+func (OKResponse) ResultType() string { return "ok" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v OKResult) MarshalJSON() ([]byte, error) {
-	type alias OKResult
+func (v OKResponse) MarshalJSON() ([]byte, error) {
+	type alias OKResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "ok", alias: alias(v)})
 }
 
-// OutputMatchedResult is the "output_matched" result.
-type OutputMatchedResult struct {
+// OutputMatchedResponse is the "output_matched" result.
+type OutputMatchedResponse struct {
 	MatchedLine *string        `json:"matched_line,omitempty"`
 	PaneID      string         `json:"pane_id"`
 	Read        PaneReadResult `json:"read"`
@@ -781,38 +782,38 @@ type OutputMatchedResult struct {
 }
 
 // ResultType returns "output_matched".
-func (OutputMatchedResult) ResultType() string { return "output_matched" }
+func (OutputMatchedResponse) ResultType() string { return "output_matched" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v OutputMatchedResult) MarshalJSON() ([]byte, error) {
-	type alias OutputMatchedResult
+func (v OutputMatchedResponse) MarshalJSON() ([]byte, error) {
+	type alias OutputMatchedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "output_matched", alias: alias(v)})
 }
 
-// PaneCopyMotionResult is the "pane_copy_motion" result.
-type PaneCopyMotionResult struct {
+// PaneCopyMotionResponse is the "pane_copy_motion" result.
+type PaneCopyMotionResponse struct {
 	ContentRevision uint64        `json:"content_revision"`
 	Cursor          PaneTextPoint `json:"cursor"`
 	PaneID          string        `json:"pane_id"`
 }
 
 // ResultType returns "pane_copy_motion".
-func (PaneCopyMotionResult) ResultType() string { return "pane_copy_motion" }
+func (PaneCopyMotionResponse) ResultType() string { return "pane_copy_motion" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneCopyMotionResult) MarshalJSON() ([]byte, error) {
-	type alias PaneCopyMotionResult
+func (v PaneCopyMotionResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneCopyMotionResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_copy_motion", alias: alias(v)})
 }
 
-// PaneCopySearchResult is the "pane_copy_search" result.
-type PaneCopySearchResult struct {
+// PaneCopySearchResponse is the "pane_copy_search" result.
+type PaneCopySearchResponse struct {
 	ContentRevision uint64          `json:"content_revision"`
 	Current         *uint32         `json:"current,omitempty"`
 	CurrentGlobal   *uint64         `json:"current_global,omitempty"`
@@ -822,88 +823,88 @@ type PaneCopySearchResult struct {
 }
 
 // ResultType returns "pane_copy_search".
-func (PaneCopySearchResult) ResultType() string { return "pane_copy_search" }
+func (PaneCopySearchResponse) ResultType() string { return "pane_copy_search" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneCopySearchResult) MarshalJSON() ([]byte, error) {
-	type alias PaneCopySearchResult
+func (v PaneCopySearchResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneCopySearchResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_copy_search", alias: alias(v)})
 }
 
-// PaneCurrentResult is the "pane_current" result.
-type PaneCurrentResult struct {
+// PaneCurrentResponse is the "pane_current" result.
+type PaneCurrentResponse struct {
 	Pane PaneInfo `json:"pane"`
 }
 
 // ResultType returns "pane_current".
-func (PaneCurrentResult) ResultType() string { return "pane_current" }
+func (PaneCurrentResponse) ResultType() string { return "pane_current" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneCurrentResult) MarshalJSON() ([]byte, error) {
-	type alias PaneCurrentResult
+func (v PaneCurrentResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneCurrentResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_current", alias: alias(v)})
 }
 
-// PaneEdgesResponseResult is the "pane_edges" result.
-type PaneEdgesResponseResult struct {
+// PaneEdgesResponse is the "pane_edges" result.
+type PaneEdgesResponse struct {
 	Edges PaneEdgesResult `json:"edges"`
 }
 
 // ResultType returns "pane_edges".
-func (PaneEdgesResponseResult) ResultType() string { return "pane_edges" }
+func (PaneEdgesResponse) ResultType() string { return "pane_edges" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneEdgesResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneEdgesResponseResult
+func (v PaneEdgesResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneEdgesResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_edges", alias: alias(v)})
 }
 
-// PaneFocusDirectionResponseResult is the "pane_focus_direction" result.
-type PaneFocusDirectionResponseResult struct {
+// PaneFocusDirectionResponse is the "pane_focus_direction" result.
+type PaneFocusDirectionResponse struct {
 	Focus PaneFocusDirectionResult `json:"focus"`
 }
 
 // ResultType returns "pane_focus_direction".
-func (PaneFocusDirectionResponseResult) ResultType() string { return "pane_focus_direction" }
+func (PaneFocusDirectionResponse) ResultType() string { return "pane_focus_direction" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneFocusDirectionResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneFocusDirectionResponseResult
+func (v PaneFocusDirectionResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneFocusDirectionResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_focus_direction", alias: alias(v)})
 }
 
-// PaneGraphicsFrameAckResult is the "pane_graphics_frame_ack" result.
-type PaneGraphicsFrameAckResult struct {
+// PaneGraphicsFrameAckResponse is the "pane_graphics_frame_ack" result.
+type PaneGraphicsFrameAckResponse struct {
 	Revision uint64 `json:"revision"`
 	Sequence uint64 `json:"sequence"`
 }
 
 // ResultType returns "pane_graphics_frame_ack".
-func (PaneGraphicsFrameAckResult) ResultType() string { return "pane_graphics_frame_ack" }
+func (PaneGraphicsFrameAckResponse) ResultType() string { return "pane_graphics_frame_ack" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneGraphicsFrameAckResult) MarshalJSON() ([]byte, error) {
-	type alias PaneGraphicsFrameAckResult
+func (v PaneGraphicsFrameAckResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneGraphicsFrameAckResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_graphics_frame_ack", alias: alias(v)})
 }
 
-// PaneGraphicsInfoResult is the "pane_graphics_info" result.
-type PaneGraphicsInfoResult struct {
+// PaneGraphicsInfoResponse is the "pane_graphics_info" result.
+type PaneGraphicsInfoResponse struct {
 	CellHeightPx uint32 `json:"cell_height_px"`
 	CellWidthPx  uint32 `json:"cell_width_px"`
 
@@ -924,588 +925,588 @@ type PaneGraphicsInfoResult struct {
 }
 
 // ResultType returns "pane_graphics_info".
-func (PaneGraphicsInfoResult) ResultType() string { return "pane_graphics_info" }
+func (PaneGraphicsInfoResponse) ResultType() string { return "pane_graphics_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneGraphicsInfoResult) MarshalJSON() ([]byte, error) {
-	type alias PaneGraphicsInfoResult
+func (v PaneGraphicsInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneGraphicsInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_graphics_info", alias: alias(v)})
 }
 
-// PaneInfoResult is the "pane_info" result.
-type PaneInfoResult struct {
+// PaneInfoResponse is the "pane_info" result.
+type PaneInfoResponse struct {
 	Pane PaneInfo `json:"pane"`
 }
 
 // ResultType returns "pane_info".
-func (PaneInfoResult) ResultType() string { return "pane_info" }
+func (PaneInfoResponse) ResultType() string { return "pane_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneInfoResult) MarshalJSON() ([]byte, error) {
-	type alias PaneInfoResult
+func (v PaneInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_info", alias: alias(v)})
 }
 
-// PaneLayoutResult is the "pane_layout" result.
-type PaneLayoutResult struct {
+// PaneLayoutResponse is the "pane_layout" result.
+type PaneLayoutResponse struct {
 	Layout PaneLayoutSnapshot `json:"layout"`
 }
 
 // ResultType returns "pane_layout".
-func (PaneLayoutResult) ResultType() string { return "pane_layout" }
+func (PaneLayoutResponse) ResultType() string { return "pane_layout" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneLayoutResult) MarshalJSON() ([]byte, error) {
-	type alias PaneLayoutResult
+func (v PaneLayoutResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneLayoutResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_layout", alias: alias(v)})
 }
 
-// PaneLinkActivatedResult is the "pane_link_activated" result.
-type PaneLinkActivatedResult struct {
+// PaneLinkActivatedResponse is the "pane_link_activated" result.
+type PaneLinkActivatedResponse struct {
 	Handled bool    `json:"handled"`
 	URL     *string `json:"url,omitempty"`
 }
 
 // ResultType returns "pane_link_activated".
-func (PaneLinkActivatedResult) ResultType() string { return "pane_link_activated" }
+func (PaneLinkActivatedResponse) ResultType() string { return "pane_link_activated" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneLinkActivatedResult) MarshalJSON() ([]byte, error) {
-	type alias PaneLinkActivatedResult
+func (v PaneLinkActivatedResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneLinkActivatedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_link_activated", alias: alias(v)})
 }
 
-// PaneListResult is the "pane_list" result.
-type PaneListResult struct {
+// PaneListResponse is the "pane_list" result.
+type PaneListResponse struct {
 	Panes []PaneInfo `json:"panes"`
 }
 
 // ResultType returns "pane_list".
-func (PaneListResult) ResultType() string { return "pane_list" }
+func (PaneListResponse) ResultType() string { return "pane_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneListResult) MarshalJSON() ([]byte, error) {
-	type alias PaneListResult
+func (v PaneListResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_list", alias: alias(v)})
 }
 
-// PaneMoveResponseResult is the "pane_move" result.
-type PaneMoveResponseResult struct {
+// PaneMoveResponse is the "pane_move" result.
+type PaneMoveResponse struct {
 	MoveResult PaneMoveResult `json:"move_result"`
 }
 
 // ResultType returns "pane_move".
-func (PaneMoveResponseResult) ResultType() string { return "pane_move" }
+func (PaneMoveResponse) ResultType() string { return "pane_move" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneMoveResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneMoveResponseResult
+func (v PaneMoveResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneMoveResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_move", alias: alias(v)})
 }
 
-// PaneNeighborResponseResult is the "pane_neighbor" result.
-type PaneNeighborResponseResult struct {
+// PaneNeighborResponse is the "pane_neighbor" result.
+type PaneNeighborResponse struct {
 	Neighbor PaneNeighborResult `json:"neighbor"`
 }
 
 // ResultType returns "pane_neighbor".
-func (PaneNeighborResponseResult) ResultType() string { return "pane_neighbor" }
+func (PaneNeighborResponse) ResultType() string { return "pane_neighbor" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneNeighborResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneNeighborResponseResult
+func (v PaneNeighborResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneNeighborResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_neighbor", alias: alias(v)})
 }
 
-// PaneProcessInfoResult is the "pane_process_info" result.
-type PaneProcessInfoResult struct {
+// PaneProcessInfoResponse is the "pane_process_info" result.
+type PaneProcessInfoResponse struct {
 	ProcessInfo PaneProcessInfo `json:"process_info"`
 }
 
 // ResultType returns "pane_process_info".
-func (PaneProcessInfoResult) ResultType() string { return "pane_process_info" }
+func (PaneProcessInfoResponse) ResultType() string { return "pane_process_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneProcessInfoResult) MarshalJSON() ([]byte, error) {
-	type alias PaneProcessInfoResult
+func (v PaneProcessInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneProcessInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_process_info", alias: alias(v)})
 }
 
-// PaneReadResponseResult is the "pane_read" result.
-type PaneReadResponseResult struct {
+// PaneReadResponse is the "pane_read" result.
+type PaneReadResponse struct {
 	Read PaneReadResult `json:"read"`
 }
 
 // ResultType returns "pane_read".
-func (PaneReadResponseResult) ResultType() string { return "pane_read" }
+func (PaneReadResponse) ResultType() string { return "pane_read" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneReadResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneReadResponseResult
+func (v PaneReadResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneReadResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_read", alias: alias(v)})
 }
 
-// PaneResizeResponseResult is the "pane_resize" result.
-type PaneResizeResponseResult struct {
+// PaneResizeResponse is the "pane_resize" result.
+type PaneResizeResponse struct {
 	Resize PaneResizeResult `json:"resize"`
 }
 
 // ResultType returns "pane_resize".
-func (PaneResizeResponseResult) ResultType() string { return "pane_resize" }
+func (PaneResizeResponse) ResultType() string { return "pane_resize" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneResizeResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneResizeResponseResult
+func (v PaneResizeResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneResizeResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_resize", alias: alias(v)})
 }
 
-// PaneSelectionResult is the "pane_selection" result.
-type PaneSelectionResult struct {
+// PaneSelectionResponse is the "pane_selection" result.
+type PaneSelectionResponse struct {
 	PaneID string `json:"pane_id"`
 	Text   string `json:"text"`
 }
 
 // ResultType returns "pane_selection".
-func (PaneSelectionResult) ResultType() string { return "pane_selection" }
+func (PaneSelectionResponse) ResultType() string { return "pane_selection" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneSelectionResult) MarshalJSON() ([]byte, error) {
-	type alias PaneSelectionResult
+func (v PaneSelectionResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneSelectionResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_selection", alias: alias(v)})
 }
 
-// PaneSwapResponseResult is the "pane_swap" result.
-type PaneSwapResponseResult struct {
+// PaneSwapResponse is the "pane_swap" result.
+type PaneSwapResponse struct {
 	Swap PaneSwapResult `json:"swap"`
 }
 
 // ResultType returns "pane_swap".
-func (PaneSwapResponseResult) ResultType() string { return "pane_swap" }
+func (PaneSwapResponse) ResultType() string { return "pane_swap" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneSwapResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneSwapResponseResult
+func (v PaneSwapResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneSwapResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_swap", alias: alias(v)})
 }
 
-// PaneZoomResponseResult is the "pane_zoom" result.
-type PaneZoomResponseResult struct {
+// PaneZoomResponse is the "pane_zoom" result.
+type PaneZoomResponse struct {
 	Zoom PaneZoomResult `json:"zoom"`
 }
 
 // ResultType returns "pane_zoom".
-func (PaneZoomResponseResult) ResultType() string { return "pane_zoom" }
+func (PaneZoomResponse) ResultType() string { return "pane_zoom" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PaneZoomResponseResult) MarshalJSON() ([]byte, error) {
-	type alias PaneZoomResponseResult
+func (v PaneZoomResponse) MarshalJSON() ([]byte, error) {
+	type alias PaneZoomResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pane_zoom", alias: alias(v)})
 }
 
-// PluginActionInvokedResult is the "plugin_action_invoked" result.
-type PluginActionInvokedResult struct {
+// PluginActionInvokedResponse is the "plugin_action_invoked" result.
+type PluginActionInvokedResponse struct {
 	Action  PluginActionInfo        `json:"action"`
 	Context PluginInvocationContext `json:"context"`
 	Log     PluginCommandLogInfo    `json:"log"`
 }
 
 // ResultType returns "plugin_action_invoked".
-func (PluginActionInvokedResult) ResultType() string { return "plugin_action_invoked" }
+func (PluginActionInvokedResponse) ResultType() string { return "plugin_action_invoked" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginActionInvokedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginActionInvokedResult
+func (v PluginActionInvokedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginActionInvokedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_action_invoked", alias: alias(v)})
 }
 
-// PluginActionListResult is the "plugin_action_list" result.
-type PluginActionListResult struct {
+// PluginActionListResponse is the "plugin_action_list" result.
+type PluginActionListResponse struct {
 	Actions []PluginActionInfo `json:"actions"`
 }
 
 // ResultType returns "plugin_action_list".
-func (PluginActionListResult) ResultType() string { return "plugin_action_list" }
+func (PluginActionListResponse) ResultType() string { return "plugin_action_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginActionListResult) MarshalJSON() ([]byte, error) {
-	type alias PluginActionListResult
+func (v PluginActionListResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginActionListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_action_list", alias: alias(v)})
 }
 
-// PluginDisabledResult is the "plugin_disabled" result.
-type PluginDisabledResult struct {
+// PluginDisabledResponse is the "plugin_disabled" result.
+type PluginDisabledResponse struct {
 	Plugin InstalledPluginInfo `json:"plugin"`
 }
 
 // ResultType returns "plugin_disabled".
-func (PluginDisabledResult) ResultType() string { return "plugin_disabled" }
+func (PluginDisabledResponse) ResultType() string { return "plugin_disabled" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginDisabledResult) MarshalJSON() ([]byte, error) {
-	type alias PluginDisabledResult
+func (v PluginDisabledResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginDisabledResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_disabled", alias: alias(v)})
 }
 
-// PluginEnabledResult is the "plugin_enabled" result.
-type PluginEnabledResult struct {
+// PluginEnabledResponse is the "plugin_enabled" result.
+type PluginEnabledResponse struct {
 	Plugin InstalledPluginInfo `json:"plugin"`
 }
 
 // ResultType returns "plugin_enabled".
-func (PluginEnabledResult) ResultType() string { return "plugin_enabled" }
+func (PluginEnabledResponse) ResultType() string { return "plugin_enabled" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginEnabledResult) MarshalJSON() ([]byte, error) {
-	type alias PluginEnabledResult
+func (v PluginEnabledResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginEnabledResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_enabled", alias: alias(v)})
 }
 
-// PluginLinkedResult is the "plugin_linked" result.
-type PluginLinkedResult struct {
+// PluginLinkedResponse is the "plugin_linked" result.
+type PluginLinkedResponse struct {
 	Plugin InstalledPluginInfo `json:"plugin"`
 }
 
 // ResultType returns "plugin_linked".
-func (PluginLinkedResult) ResultType() string { return "plugin_linked" }
+func (PluginLinkedResponse) ResultType() string { return "plugin_linked" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginLinkedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginLinkedResult
+func (v PluginLinkedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginLinkedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_linked", alias: alias(v)})
 }
 
-// PluginListResult is the "plugin_list" result.
-type PluginListResult struct {
+// PluginListResponse is the "plugin_list" result.
+type PluginListResponse struct {
 	Plugins []InstalledPluginInfo `json:"plugins"`
 }
 
 // ResultType returns "plugin_list".
-func (PluginListResult) ResultType() string { return "plugin_list" }
+func (PluginListResponse) ResultType() string { return "plugin_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginListResult) MarshalJSON() ([]byte, error) {
-	type alias PluginListResult
+func (v PluginListResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_list", alias: alias(v)})
 }
 
-// PluginLogListResult is the "plugin_log_list" result.
-type PluginLogListResult struct {
+// PluginLogListResponse is the "plugin_log_list" result.
+type PluginLogListResponse struct {
 	Logs []PluginCommandLogInfo `json:"logs"`
 }
 
 // ResultType returns "plugin_log_list".
-func (PluginLogListResult) ResultType() string { return "plugin_log_list" }
+func (PluginLogListResponse) ResultType() string { return "plugin_log_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginLogListResult) MarshalJSON() ([]byte, error) {
-	type alias PluginLogListResult
+func (v PluginLogListResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginLogListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_log_list", alias: alias(v)})
 }
 
-// PluginPaneClosedResult is the "plugin_pane_closed" result.
-type PluginPaneClosedResult struct {
+// PluginPaneClosedResponse is the "plugin_pane_closed" result.
+type PluginPaneClosedResponse struct {
 	PaneID string `json:"pane_id"`
 }
 
 // ResultType returns "plugin_pane_closed".
-func (PluginPaneClosedResult) ResultType() string { return "plugin_pane_closed" }
+func (PluginPaneClosedResponse) ResultType() string { return "plugin_pane_closed" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginPaneClosedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginPaneClosedResult
+func (v PluginPaneClosedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginPaneClosedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_pane_closed", alias: alias(v)})
 }
 
-// PluginPaneFocusedResult is the "plugin_pane_focused" result.
-type PluginPaneFocusedResult struct {
+// PluginPaneFocusedResponse is the "plugin_pane_focused" result.
+type PluginPaneFocusedResponse struct {
 	PluginPane PluginPaneInfo `json:"plugin_pane"`
 }
 
 // ResultType returns "plugin_pane_focused".
-func (PluginPaneFocusedResult) ResultType() string { return "plugin_pane_focused" }
+func (PluginPaneFocusedResponse) ResultType() string { return "plugin_pane_focused" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginPaneFocusedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginPaneFocusedResult
+func (v PluginPaneFocusedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginPaneFocusedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_pane_focused", alias: alias(v)})
 }
 
-// PluginPaneOpenedResult is the "plugin_pane_opened" result.
-type PluginPaneOpenedResult struct {
+// PluginPaneOpenedResponse is the "plugin_pane_opened" result.
+type PluginPaneOpenedResponse struct {
 	PluginPane PluginPaneInfo `json:"plugin_pane"`
 }
 
 // ResultType returns "plugin_pane_opened".
-func (PluginPaneOpenedResult) ResultType() string { return "plugin_pane_opened" }
+func (PluginPaneOpenedResponse) ResultType() string { return "plugin_pane_opened" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginPaneOpenedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginPaneOpenedResult
+func (v PluginPaneOpenedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginPaneOpenedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_pane_opened", alias: alias(v)})
 }
 
-// PluginUnlinkedResult is the "plugin_unlinked" result.
-type PluginUnlinkedResult struct {
+// PluginUnlinkedResponse is the "plugin_unlinked" result.
+type PluginUnlinkedResponse struct {
 	PluginID string `json:"plugin_id"`
 	Removed  bool   `json:"removed"`
 }
 
 // ResultType returns "plugin_unlinked".
-func (PluginUnlinkedResult) ResultType() string { return "plugin_unlinked" }
+func (PluginUnlinkedResponse) ResultType() string { return "plugin_unlinked" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PluginUnlinkedResult) MarshalJSON() ([]byte, error) {
-	type alias PluginUnlinkedResult
+func (v PluginUnlinkedResponse) MarshalJSON() ([]byte, error) {
+	type alias PluginUnlinkedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "plugin_unlinked", alias: alias(v)})
 }
 
-// PongResult is the "pong" result.
-type PongResult struct {
+// PongResponse is the "pong" result.
+type PongResponse struct {
 	Capabilities *ServerCapabilities `json:"capabilities,omitempty"`
 	Protocol     uint32              `json:"protocol"`
 	Version      string              `json:"version"`
 }
 
 // ResultType returns "pong".
-func (PongResult) ResultType() string { return "pong" }
+func (PongResponse) ResultType() string { return "pong" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v PongResult) MarshalJSON() ([]byte, error) {
-	type alias PongResult
+func (v PongResponse) MarshalJSON() ([]byte, error) {
+	type alias PongResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "pong", alias: alias(v)})
 }
 
-// SessionSnapshotResult is the "session_snapshot" result.
-type SessionSnapshotResult struct {
+// SessionSnapshotResponse is the "session_snapshot" result.
+type SessionSnapshotResponse struct {
 	Snapshot SessionSnapshot `json:"snapshot"`
 }
 
 // ResultType returns "session_snapshot".
-func (SessionSnapshotResult) ResultType() string { return "session_snapshot" }
+func (SessionSnapshotResponse) ResultType() string { return "session_snapshot" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v SessionSnapshotResult) MarshalJSON() ([]byte, error) {
-	type alias SessionSnapshotResult
+func (v SessionSnapshotResponse) MarshalJSON() ([]byte, error) {
+	type alias SessionSnapshotResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "session_snapshot", alias: alias(v)})
 }
 
-// SubscriptionStartedResult is the "subscription_started" result.
-type SubscriptionStartedResult struct{}
+// SubscriptionStartedResponse is the "subscription_started" result.
+type SubscriptionStartedResponse struct{}
 
 // ResultType returns "subscription_started".
-func (SubscriptionStartedResult) ResultType() string { return "subscription_started" }
+func (SubscriptionStartedResponse) ResultType() string { return "subscription_started" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v SubscriptionStartedResult) MarshalJSON() ([]byte, error) {
-	type alias SubscriptionStartedResult
+func (v SubscriptionStartedResponse) MarshalJSON() ([]byte, error) {
+	type alias SubscriptionStartedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "subscription_started", alias: alias(v)})
 }
 
-// TabCreatedResult is the "tab_created" result.
-type TabCreatedResult struct {
+// TabCreatedResponse is the "tab_created" result.
+type TabCreatedResponse struct {
 	RootPane PaneInfo `json:"root_pane"`
 	Tab      TabInfo  `json:"tab"`
 }
 
 // ResultType returns "tab_created".
-func (TabCreatedResult) ResultType() string { return "tab_created" }
+func (TabCreatedResponse) ResultType() string { return "tab_created" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v TabCreatedResult) MarshalJSON() ([]byte, error) {
-	type alias TabCreatedResult
+func (v TabCreatedResponse) MarshalJSON() ([]byte, error) {
+	type alias TabCreatedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "tab_created", alias: alias(v)})
 }
 
-// TabInfoResult is the "tab_info" result.
-type TabInfoResult struct {
+// TabInfoResponse is the "tab_info" result.
+type TabInfoResponse struct {
 	Tab TabInfo `json:"tab"`
 }
 
 // ResultType returns "tab_info".
-func (TabInfoResult) ResultType() string { return "tab_info" }
+func (TabInfoResponse) ResultType() string { return "tab_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v TabInfoResult) MarshalJSON() ([]byte, error) {
-	type alias TabInfoResult
+func (v TabInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias TabInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "tab_info", alias: alias(v)})
 }
 
-// TabListResult is the "tab_list" result.
-type TabListResult struct {
+// TabListResponse is the "tab_list" result.
+type TabListResponse struct {
 	Tabs []TabInfo `json:"tabs"`
 }
 
 // ResultType returns "tab_list".
-func (TabListResult) ResultType() string { return "tab_list" }
+func (TabListResponse) ResultType() string { return "tab_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v TabListResult) MarshalJSON() ([]byte, error) {
-	type alias TabListResult
+func (v TabListResponse) MarshalJSON() ([]byte, error) {
+	type alias TabListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "tab_list", alias: alias(v)})
 }
 
-// WaitMatchedResult is the "wait_matched" result.
-type WaitMatchedResult struct {
+// WaitMatchedResponse is the "wait_matched" result.
+type WaitMatchedResponse struct {
 	Event EventEnvelope `json:"event"`
 }
 
 // ResultType returns "wait_matched".
-func (WaitMatchedResult) ResultType() string { return "wait_matched" }
+func (WaitMatchedResponse) ResultType() string { return "wait_matched" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WaitMatchedResult) MarshalJSON() ([]byte, error) {
-	type alias WaitMatchedResult
+func (v WaitMatchedResponse) MarshalJSON() ([]byte, error) {
+	type alias WaitMatchedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "wait_matched", alias: alias(v)})
 }
 
-// WorkspaceCreatedResult is the "workspace_created" result.
-type WorkspaceCreatedResult struct {
+// WorkspaceCreatedResponse is the "workspace_created" result.
+type WorkspaceCreatedResponse struct {
 	RootPane  PaneInfo      `json:"root_pane"`
 	Tab       TabInfo       `json:"tab"`
 	Workspace WorkspaceInfo `json:"workspace"`
 }
 
 // ResultType returns "workspace_created".
-func (WorkspaceCreatedResult) ResultType() string { return "workspace_created" }
+func (WorkspaceCreatedResponse) ResultType() string { return "workspace_created" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorkspaceCreatedResult) MarshalJSON() ([]byte, error) {
-	type alias WorkspaceCreatedResult
+func (v WorkspaceCreatedResponse) MarshalJSON() ([]byte, error) {
+	type alias WorkspaceCreatedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "workspace_created", alias: alias(v)})
 }
 
-// WorkspaceInfoResult is the "workspace_info" result.
-type WorkspaceInfoResult struct {
+// WorkspaceInfoResponse is the "workspace_info" result.
+type WorkspaceInfoResponse struct {
 	Workspace WorkspaceInfo `json:"workspace"`
 }
 
 // ResultType returns "workspace_info".
-func (WorkspaceInfoResult) ResultType() string { return "workspace_info" }
+func (WorkspaceInfoResponse) ResultType() string { return "workspace_info" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorkspaceInfoResult) MarshalJSON() ([]byte, error) {
-	type alias WorkspaceInfoResult
+func (v WorkspaceInfoResponse) MarshalJSON() ([]byte, error) {
+	type alias WorkspaceInfoResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "workspace_info", alias: alias(v)})
 }
 
-// WorkspaceListResult is the "workspace_list" result.
-type WorkspaceListResult struct {
+// WorkspaceListResponse is the "workspace_list" result.
+type WorkspaceListResponse struct {
 	Workspaces []WorkspaceInfo `json:"workspaces"`
 }
 
 // ResultType returns "workspace_list".
-func (WorkspaceListResult) ResultType() string { return "workspace_list" }
+func (WorkspaceListResponse) ResultType() string { return "workspace_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorkspaceListResult) MarshalJSON() ([]byte, error) {
-	type alias WorkspaceListResult
+func (v WorkspaceListResponse) MarshalJSON() ([]byte, error) {
+	type alias WorkspaceListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "workspace_list", alias: alias(v)})
 }
 
-// WorktreeCreatedResult is the "worktree_created" result.
-type WorktreeCreatedResult struct {
+// WorktreeCreatedResponse is the "worktree_created" result.
+type WorktreeCreatedResponse struct {
 	RootPane  PaneInfo      `json:"root_pane"`
 	Tab       TabInfo       `json:"tab"`
 	Workspace WorkspaceInfo `json:"workspace"`
@@ -1513,37 +1514,37 @@ type WorktreeCreatedResult struct {
 }
 
 // ResultType returns "worktree_created".
-func (WorktreeCreatedResult) ResultType() string { return "worktree_created" }
+func (WorktreeCreatedResponse) ResultType() string { return "worktree_created" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorktreeCreatedResult) MarshalJSON() ([]byte, error) {
-	type alias WorktreeCreatedResult
+func (v WorktreeCreatedResponse) MarshalJSON() ([]byte, error) {
+	type alias WorktreeCreatedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "worktree_created", alias: alias(v)})
 }
 
-// WorktreeListResult is the "worktree_list" result.
-type WorktreeListResult struct {
+// WorktreeListResponse is the "worktree_list" result.
+type WorktreeListResponse struct {
 	Source    WorktreeSourceInfo `json:"source"`
 	Worktrees []WorktreeInfo     `json:"worktrees"`
 }
 
 // ResultType returns "worktree_list".
-func (WorktreeListResult) ResultType() string { return "worktree_list" }
+func (WorktreeListResponse) ResultType() string { return "worktree_list" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorktreeListResult) MarshalJSON() ([]byte, error) {
-	type alias WorktreeListResult
+func (v WorktreeListResponse) MarshalJSON() ([]byte, error) {
+	type alias WorktreeListResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "worktree_list", alias: alias(v)})
 }
 
-// WorktreeOpenedResult is the "worktree_opened" result.
-type WorktreeOpenedResult struct {
+// WorktreeOpenedResponse is the "worktree_opened" result.
+type WorktreeOpenedResponse struct {
 	AlreadyOpen bool          `json:"already_open"`
 	RootPane    PaneInfo      `json:"root_pane"`
 	Tab         TabInfo       `json:"tab"`
@@ -1552,30 +1553,30 @@ type WorktreeOpenedResult struct {
 }
 
 // ResultType returns "worktree_opened".
-func (WorktreeOpenedResult) ResultType() string { return "worktree_opened" }
+func (WorktreeOpenedResponse) ResultType() string { return "worktree_opened" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorktreeOpenedResult) MarshalJSON() ([]byte, error) {
-	type alias WorktreeOpenedResult
+func (v WorktreeOpenedResponse) MarshalJSON() ([]byte, error) {
+	type alias WorktreeOpenedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias
 	}{Type: "worktree_opened", alias: alias(v)})
 }
 
-// WorktreeRemovedResult is the "worktree_removed" result.
-type WorktreeRemovedResult struct {
+// WorktreeRemovedResponse is the "worktree_removed" result.
+type WorktreeRemovedResponse struct {
 	Forced      bool   `json:"forced"`
 	Path        string `json:"path"`
 	WorkspaceID string `json:"workspace_id"`
 }
 
 // ResultType returns "worktree_removed".
-func (WorktreeRemovedResult) ResultType() string { return "worktree_removed" }
+func (WorktreeRemovedResponse) ResultType() string { return "worktree_removed" }
 
 // MarshalJSON writes the object with its "type" field.
-func (v WorktreeRemovedResult) MarshalJSON() ([]byte, error) {
-	type alias WorktreeRemovedResult
+func (v WorktreeRemovedResponse) MarshalJSON() ([]byte, error) {
+	type alias WorktreeRemovedResponse
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		alias

@@ -82,8 +82,8 @@ func TestMultiResultWrapper(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PluginPaneOpen: %v", err)
 	}
-	if _, ok := result.(*OKResult); !ok {
-		t.Errorf("result is %T, want *OKResult", result)
+	if _, ok := result.(*OKResponse); !ok {
+		t.Errorf("result is %T, want *OKResponse", result)
 	}
 	if result.ResultType() != "ok" {
 		t.Errorf("result type = %q, want ok", result.ResultType())

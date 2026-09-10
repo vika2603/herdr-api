@@ -39,9 +39,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "ping",
 			check: func(t *testing.T, result Result) {
-				pong, ok := result.(*PongResult)
+				pong, ok := result.(*PongResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *PongResult", result)
+					t.Fatalf("result is %T, want *PongResponse", result)
 				}
 				if pong.Version != "0.9.0" {
 					t.Errorf("version = %q, want 0.9.0", pong.Version)
@@ -60,9 +60,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "workspace_list",
 			check: func(t *testing.T, result Result) {
-				list, ok := result.(*WorkspaceListResult)
+				list, ok := result.(*WorkspaceListResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *WorkspaceListResult", result)
+					t.Fatalf("result is %T, want *WorkspaceListResponse", result)
 				}
 				if len(list.Workspaces) != 5 {
 					t.Fatalf("decoded %d workspaces, want 5", len(list.Workspaces))
@@ -91,9 +91,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "pane_list",
 			check: func(t *testing.T, result Result) {
-				list, ok := result.(*PaneListResult)
+				list, ok := result.(*PaneListResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *PaneListResult", result)
+					t.Fatalf("result is %T, want *PaneListResponse", result)
 				}
 				if len(list.Panes) == 0 {
 					t.Fatal("no panes decoded")
@@ -116,9 +116,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "agent_list",
 			check: func(t *testing.T, result Result) {
-				list, ok := result.(*AgentListResult)
+				list, ok := result.(*AgentListResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *AgentListResult", result)
+					t.Fatalf("result is %T, want *AgentListResponse", result)
 				}
 				if len(list.Agents) == 0 {
 					t.Fatal("no agents decoded")
@@ -135,9 +135,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "plugin_list",
 			check: func(t *testing.T, result Result) {
-				list, ok := result.(*PluginListResult)
+				list, ok := result.(*PluginListResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *PluginListResult", result)
+					t.Fatalf("result is %T, want *PluginListResponse", result)
 				}
 				if len(list.Plugins) == 0 {
 					t.Fatal("no plugins decoded")
@@ -160,9 +160,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "plugin_action_list",
 			check: func(t *testing.T, result Result) {
-				list, ok := result.(*PluginActionListResult)
+				list, ok := result.(*PluginActionListResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *PluginActionListResult", result)
+					t.Fatalf("result is %T, want *PluginActionListResponse", result)
 				}
 				if len(list.Actions) != 1 {
 					t.Fatalf("decoded %d actions, want 1", len(list.Actions))
@@ -179,9 +179,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "session_snapshot",
 			check: func(t *testing.T, result Result) {
-				snapshot, ok := result.(*SessionSnapshotResult)
+				snapshot, ok := result.(*SessionSnapshotResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *SessionSnapshotResult", result)
+					t.Fatalf("result is %T, want *SessionSnapshotResponse", result)
 				}
 				session := snapshot.Snapshot
 				if session.Protocol != SchemaProtocol {
@@ -206,9 +206,9 @@ func TestDecodeCapturedResults(t *testing.T) {
 		{
 			file: "server_agent_manifests",
 			check: func(t *testing.T, result Result) {
-				status, ok := result.(*AgentManifestStatusResult)
+				status, ok := result.(*AgentManifestStatusResponse)
 				if !ok {
-					t.Fatalf("result is %T, want *AgentManifestStatusResult", result)
+					t.Fatalf("result is %T, want *AgentManifestStatusResponse", result)
 				}
 				if len(status.Manifests) == 0 {
 					t.Fatal("no manifests decoded")

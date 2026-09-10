@@ -373,13 +373,9 @@ func (b *builder) buildResults() error {
 	}
 	for _, variant := range def.OneOf {
 		tag := *variant.Properties[disc].Const
-		name := pascal(tag) + "Result"
-		if _, taken := b.defs[name]; taken {
-			// The schema already uses this name for the payload the variant
-			// carries, for example PaneReadResult.
-			name = pascal(tag) + "ResponseResult"
-		}
-		t, err := b.buildStruct(name, variant, disc)
+		// The Response suffix keeps the variant apart from the payload type
+		// it carries, for example PaneReadResponse and PaneReadResult.
+		t, err := b.buildStruct(pascal(tag)+"Response", variant, disc)
 		if err != nil {
 			return err
 		}

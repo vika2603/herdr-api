@@ -93,7 +93,7 @@ func emitResultsFile(pkg *Package) string {
 	c := newFile(pkg.Name, "encoding/json", "fmt")
 
 	c.blank()
-	c.doc("Result is a decoded result object of a successful response.")
+	c.doc("Result is the decoded result object of a successful response. Every variant is named after its \"type\" value with a Response suffix, for example PaneInfoResponse for \"pane_info\".")
 	c.line("type Result interface {")
 	c.doc("\tResultType returns the value of the result's \"type\" field.")
 	c.line("\tResultType() string")
