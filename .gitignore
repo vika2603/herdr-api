@@ -7,7 +7,6 @@ coverage.*
 
 # Binaries a `go build ./...` or `go build ./examples/...` leaves behind, named
 # after the package directory they came from.
-/herdr-client
 /herdr-apigen
 /agent-status
 /agent-board

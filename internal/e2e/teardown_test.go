@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // stageTeardown withdraws what the agent stage reported, moves and closes the

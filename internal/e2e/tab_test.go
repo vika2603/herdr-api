@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // stageTab works on a tab of its own so closing it leaves the workspace the

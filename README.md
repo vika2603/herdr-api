@@ -17,9 +17,18 @@ Generated against herdr 0.9.0, protocol 22.
 go get github.com/vika2603/herdr-client
 ```
 
+The module holds two packages a plugin imports:
+
+```go
+import (
+	"github.com/vika2603/herdr-client/herdr"  // the API client and the session mirror
+	"github.com/vika2603/herdr-client/plugin" // the environment Herdr injects, and dispatch
+)
+```
+
 ## Connect and call
 
-The package name is `herdr`. `NewFromEnv` resolves the socket the way the
+`NewFromEnv` resolves the socket the way the
 herdr CLI does: `HERDR_SOCKET_PATH` first, then the session named by
 `HERDR_SESSION`, then the default session.
 
@@ -281,7 +290,7 @@ eligible.
 
 | Path                               | Contents                                                                 |
 | ---------------------------------- | ------------------------------------------------------------------------ |
-| `.` (package `herdr`)              | Transport, plus the generated types, results, events and method wrappers |
+| `herdr`                            | Transport, plus the generated types, results, events and method wrappers |
 | `plugin`                           | The environment Herdr injects into plugin commands, and the registry     |
 | `plugin/manifest`                  | `herdr-plugin.toml` parsing and validation                               |
 | `plugin/plugintest`                | A plugin environment built in memory, and the manifest check             |

@@ -7,7 +7,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // Plugin is a registry of handlers, one per entrypoint a manifest declares.

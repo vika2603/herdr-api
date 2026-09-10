@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // probeTarget is the agent whose integration the suite installs and removes.

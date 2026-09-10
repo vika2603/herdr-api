@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // stageWorkspace creates the workspace the later stages work in and calls

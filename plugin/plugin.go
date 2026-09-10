@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // Environment variables Herdr sets for the commands a plugin declares. See

@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/vika2603/herdr-client"
+import "github.com/vika2603/herdr-client/herdr"
 
 // Invocation is the invocation context Herdr passed, with its optional fields
 // flattened to values: a field Herdr did not send reads as the empty string

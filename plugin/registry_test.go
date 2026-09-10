@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // recordRun returns a handler that records that it ran and returns err.

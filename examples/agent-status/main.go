@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 	"github.com/vika2603/herdr-client/plugin"
 )
 

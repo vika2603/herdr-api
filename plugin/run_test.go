@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // calls records which handler of a Handlers set ran and with which argument.

@@ -3,8 +3,8 @@
 //
 // Wire types, result and event decoders, and the typed method wrappers on
 // Client are generated from the JSON Schema printed by `herdr api schema
-// --json`; the snapshot lives in schema/. The transport in this package is
+// --json`; the snapshot lives in ../schema. The transport in this package is
 // handwritten. See docs/design.md for the layout and the generation rules.
 package herdr
 
-//go:generate go run ./cmd/herdr-apigen -schema schema/herdr-api.schema.json -methods schema/method-results.json -out .
+//go:generate go run ../cmd/herdr-apigen -schema ../schema/herdr-api.schema.json -methods ../schema/method-results.json -out .

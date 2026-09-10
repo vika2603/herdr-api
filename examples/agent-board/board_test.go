@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // session is the frame the layout cases vary: two workspaces, three tabs and

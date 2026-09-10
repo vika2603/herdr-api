@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // stagePane splits the workspace root pane and calls the structural pane

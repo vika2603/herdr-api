@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 func main() {

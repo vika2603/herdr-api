@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 // stageLayout works on the tab the pane stage split in two: its exported

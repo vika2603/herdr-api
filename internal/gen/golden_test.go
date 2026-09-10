@@ -16,8 +16,12 @@ func readFile(t *testing.T, path string) []byte {
 	return data
 }
 
+// packageDir is where the generated files are checked in, relative to the
+// module root.
+const packageDir = "herdr"
+
 // TestGeneratedFilesAreUpToDate runs the generator on the schema snapshot and
-// compares the result with the files checked in at the module root.
+// compares the result with the files checked in.
 func TestGeneratedFilesAreUpToDate(t *testing.T) {
 	root := filepath.Join("..", "..")
 	files, err := Generate(
@@ -34,7 +38,7 @@ func TestGeneratedFilesAreUpToDate(t *testing.T) {
 			t.Errorf("%s was not generated", name)
 			continue
 		}
-		if want := readFile(t, filepath.Join(root, name)); !bytes.Equal(generated, want) {
+		if want := readFile(t, filepath.Join(root, packageDir, name)); !bytes.Equal(generated, want) {
 			t.Errorf("%s differs from the generated output; run go generate ./...", name)
 		}
 	}

@@ -5,7 +5,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/herdr"
 )
 
 func stageServer(t *testing.T, h *harness, _ *state) {
