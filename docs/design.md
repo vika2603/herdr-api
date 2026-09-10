@@ -479,3 +479,47 @@ instead.
 home, at `~/.herdr/worktrees/<repo>/<branch>`, not relative to `cwd`. Pass an
 explicit `path` when the location matters, which is what the e2e suite does so
 that it stays inside its temporary directory.
+
+## Phase 3
+
+Phase 2 left three things undone, each backed by something the work turned up
+rather than by speculation.
+
+| Track | Files | Branch |
+| --- | --- | --- |
+| Graphics streaming | `graphics.go` and its tests in the root package | `feat/graphics` |
+| Plugin ergonomics | `plugin/`, `examples/` | `feat/plugin-ergonomics` |
+| Agent lifecycle coverage | `internal/e2e/` | continues on `feat/e2e` |
+
+### Graphics streaming
+
+`pane.graphics.stream` is the only method the server accepts that no generated
+wrapper reaches, because its framing is not newline-delimited JSON. After the
+acknowledgement the client sends one JSON header and then exactly
+`data_length` raw bytes per frame, on a connection that stays open. It needs a
+handwritten type beside the transport:
+
+```go
+func (c *Client) PaneGraphicsStream(ctx context.Context, params PaneGraphicsStreamParams) (*GraphicsStream, error)
+func (s *GraphicsStream) SendFrame(ctx context.Context, frame GraphicsFrame) (*PaneGraphicsFrameAckResponse, error)
+func (s *GraphicsStream) Close() error
+```
+
+`pane_graphics_frame_ack` is the one result variant no method in
+`method-results.json` returns, which is consistent with it belonging to this
+method. Confirm that against the server rather than assuming it.
+
+### Plugin ergonomics
+
+Two gaps the worked example exposed. `Run` passes the caller's context
+straight through, so a pane entrypoint that runs until the user closes it has
+no way to shut down cleanly; an option that cancels on SIGINT and SIGTERM
+belongs next to it. And a plugin that watches events wants `Session`, which no
+example demonstrates.
+
+### Agent lifecycle coverage
+
+`agent.start`, `agent.prompt` and `agent.send_keys` are out of reach for the
+current suite because they need a real agent process in the pane. A machine
+with a supported agent CLI can cover them; a machine without one skips. That
+is the last group of methods with no execution behind them.
