@@ -605,7 +605,10 @@ func (c *sessionCache) reorderTabs(workspaceID string, tabs []TabInfo) {
 }
 
 // applyAgentDetected is the authority on which agent a pane runs: a detection
-// names it, a release ends it.
+// names it, and the released form ends it, because herdr fires that one when
+// the detected agent hands the pane back to the shell (herdr 0.9.0,
+// src/events.rs, AppEvent::HookAgentReleased, emitted as PaneAgentDetected in
+// src/api/app_api.rs).
 func (c *sessionCache) applyAgentDetected(e *PaneAgentDetectedEvent) {
 	pane, hasPane := c.panes.get(e.PaneID)
 	released := e.Released != nil && *e.Released
@@ -664,8 +667,9 @@ func (c *sessionCache) applyAgentStatus(e *PaneAgentStatusChangedEvent) {
 	c.agents.set(e.PaneID, agent)
 }
 
-// The focused flag is exclusive across the whole session in every snapshot the
-// server reports, so a focus event clears it everywhere else.
+// The focused flag is exclusive across the whole session, and herdr emits the
+// whole workspace, tab and pane chain when the focus moves, so a focus event
+// clears the flag on every other entry of its kind. Both hold for herdr 0.9.0.
 func (c *sessionCache) focusWorkspace(workspaceID string) {
 	c.workspaces.update(func(id string, workspace WorkspaceInfo) WorkspaceInfo {
 		workspace.Focused = id == workspaceID
