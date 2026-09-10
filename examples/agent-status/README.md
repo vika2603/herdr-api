@@ -1,7 +1,19 @@
 # Agent Status Log
 
-An example Herdr plugin: one Go binary serving three entrypoints through
-`plugin.Run`, which selects the handler from the environment Herdr injects.
+An example Herdr plugin: one Go binary serving three entrypoints through the
+`plugin` registry, which selects the handler from the environment Herdr
+injects.
+
+```go
+p := plugin.New()
+p.Startup(onStartup)
+p.Action("show", onShow)
+plugin.OnEvent(p, onStatusChanged)
+os.Exit(p.Run(context.Background()))
+```
+
+`OnEvent` takes the event name from its handler's payload type, so
+`herdr-plugin.toml` holds the only copy of `pane.agent_status_changed`.
 
 | Entrypoint | Manifest section | What it does |
 | --- | --- | --- |
@@ -11,12 +23,20 @@ An example Herdr plugin: one Go binary serving three entrypoints through
 
 Records are written as JSON lines to `agent-status.jsonl` in
 `HERDR_PLUGIN_STATE_DIR`, the directory Herdr gives the plugin for its own
-state. Each record holds a timestamp, the workspace and pane ids, the agent
-label Herdr displays, and the new status.
+state, through `Env.AppendStateJSONL`. Each record holds a timestamp, the
+workspace and pane ids, the agent label Herdr displays, and the new status.
+Herdr runs one hook process per event and several may overlap, which is why
+the log is appended to rather than rewritten.
 
-The action reads its invocation context through `Env.Context()`. When Herdr
-invoked it from a workspace, only that workspace's records are printed;
+The action reads its invocation context through `Env.Invocation()`, which
+reports a field Herdr did not pass as the empty string. When Herdr invoked
+the action from a workspace, only that workspace's records are printed;
 invoked globally, it prints all of them.
+
+`TestManifest` is one call to `plugintest.CheckManifest`, which validates
+`herdr-plugin.toml` the way Herdr does and reports any id or event the
+manifest and the registry disagree on. The handler tests build their
+environment with `plugintest.Env` instead of setting `HERDR_*` variables.
 
 ## Install
 
@@ -62,8 +82,8 @@ herdr plugin log list --plugin example.agent-status
 
 ## Exit codes
 
-`plugin.Run` returns the exit code Herdr stores in that log: `0` on success,
+`Plugin.Run` returns the exit code Herdr stores in that log: `0` on success,
 `1` when a handler returned an error, and `2` when no handler ran because the
 environment was not a plugin environment, its entrypoint kind was unknown, no
-handler was registered for it, or the event envelope did not decode. The error
-is written to stderr in every failing case.
+handler was registered for the id or event Herdr invoked, or the event
+envelope did not decode. The error is written to stderr in every failing case.
