@@ -237,3 +237,71 @@ func TestRegistrationMistakesPanic(t *testing.T) {
 }
 
 func noop(context.Context, *Env) error { return nil }
+
+func TestPluginDispatchRunsAHandlerWithoutTheProcessEnvironment(t *testing.T) {
+	var ran string
+	p := New()
+	p.Action("show", recordRun(&ran, "action show", nil))
+	OnEvent(p, func(_ context.Context, _ *Env, e *herdr.PaneAgentStatusChangedEvent) error {
+		ran = "event " + e.PaneID
+		return nil
+	})
+
+	tests := []struct {
+		name string
+		env  *Env
+		want string
+	}{
+		{name: "action", env: &Env{ActionID: "show"}, want: "action show"},
+		{
+			name: "event",
+			env:  &Env{Event: "pane.agent_status_changed", EventJSON: []byte(statusEventJSON)},
+			want: "event pane-1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ran = ""
+			if err := p.Dispatch(context.Background(), tt.env); err != nil {
+				t.Fatalf("Dispatch() = %v, want nil", err)
+			}
+			if ran != tt.want {
+				t.Errorf("ran %q, want %q", ran, tt.want)
+			}
+		})
+	}
+}
+
+func TestPluginDispatchReturnsTheHandlerError(t *testing.T) {
+	want := errors.New("boom")
+	p := New()
+	p.Action("show", func(context.Context, *Env) error { return want })
+
+	if err := p.Dispatch(context.Background(), &Env{ActionID: "show"}); !errors.Is(err, want) {
+		t.Errorf("Dispatch() = %v, want %v", err, want)
+	}
+}
+
+func TestPluginDispatchReportsThatNoHandlerRan(t *testing.T) {
+	tests := []struct {
+		name string
+		env  *Env
+		want string
+	}{
+		{name: "unregistered action", env: &Env{ActionID: "hide"}, want: `no action handler registered for "hide"`},
+		{name: "no entrypoint marker", env: &Env{}, want: "entrypoint kind"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := New()
+			p.Action("show", noop)
+
+			err := p.Dispatch(context.Background(), tt.env)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Errorf("Dispatch() = %v, want it to contain %q", err, tt.want)
+			}
+		})
+	}
+}

@@ -544,8 +544,10 @@ func TestManifest(t *testing.T) {
 Herdr validates the manifest, but nothing tied its ids to the handlers a
 binary serves, so a renamed action failed at invocation time rather than in a
 test. The registry knows every id, so one call reports an id declared with no
-handler, a handler with no manifest entry, and an `[[events]] on` value herdr
-never fires a hook for.
+handler, a handler with no manifest entry, an `[[events]] on` value herdr
+never fires a hook for, and a handler registered for such an event, which no
+manifest entry could reach either. That last check reads the hook set from
+`manifest.HookEventNames`, the exported form of `PLUGIN_HOOK_EVENT_KINDS`.
 
 ### Testing a handler without Herdr
 
@@ -557,6 +559,14 @@ env := plugintest.Env(plugintest.Action("show"), plugintest.Workspace("w1"))
 kind, the invocation context, the event payload and the two directories, so a
 handler test sets no environment variables. It is a separate package so that
 importing it cannot pull test-only code into a plugin binary.
+
+```go
+err := p.Dispatch(ctx, plugintest.Env(plugintest.Action("show")))
+```
+
+`Dispatch` runs the same selection `Run` does and returns the handler's error
+instead of an exit code, so a test covers the registration and the envelope
+decode rather than only the handler function it calls directly.
 
 ### Reading the context without pointer checks
 

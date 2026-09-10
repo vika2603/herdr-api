@@ -42,7 +42,9 @@ var schemaEventKinds = []string{
 // the four events left out: workspace_metadata_updated, pane_updated,
 // pane_output_changed and layout_updated.
 //
-// Both lists stay local to this package until the generated EventKind lands.
+// schemaEventKinds stays local to this package; the hook set is published as
+// HookEventNames, because a caller holding the manifest cannot otherwise tell
+// an event herdr hooks from one it only pushes to subscribers.
 var hookEventKinds = []string{
 	"workspace_created",
 	"workspace_updated",
@@ -66,6 +68,20 @@ var hookEventKinds = []string{
 	"pane_exited",
 	"pane_agent_detected",
 	"pane_agent_status_changed",
+}
+
+// HookEventNames returns the dotted names of the events a manifest [[events]]
+// hook may name, in schema order. Herdr fires a plugin hook only for these,
+// so a handler registered for any other event can never run; see
+// plugintest.CheckManifest, which reports that against a registry.
+//
+// The result is a fresh slice the caller may keep or modify.
+func HookEventNames() []string {
+	names := make([]string, len(hookEventKinds))
+	for i, kind := range hookEventKinds {
+		names[i] = dotName(kind)
+	}
+	return names
 }
 
 // dotName converts an EventKind to the dotted name a manifest event hook

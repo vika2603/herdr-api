@@ -84,7 +84,7 @@ func (p *Plugin) Pane(id string, h func(context.Context, *Env) error) {
 // It is a free function rather than a method because it takes a type
 // parameter. Registering a payload Herdr never delivers to a hook, such as
 // PaneOutputMatchedEvent, is accepted here and reported by
-// plugintest.CheckManifest, which can see the manifest as well as the code.
+// plugintest.CheckManifest, which knows which events Herdr hooks.
 func OnEvent[E herdr.Event](p *Plugin, h func(context.Context, *Env, *E) error) {
 	requireHandler(h == nil, "event hook")
 	var zero E
@@ -109,6 +109,25 @@ func OnEvent[E herdr.Event](p *Plugin, h func(context.Context, *Env, *E) error) 
 // ran, which now includes an id or event name with no registration.
 func (p *Plugin) Run(ctx context.Context) int {
 	return run(ctx, p.bind, os.LookupEnv, os.Stderr)
+}
+
+// Dispatch runs the handler for the entrypoint env describes and returns its
+// error instead of an exit code, so that dispatch can be exercised against an
+// environment built in memory rather than by running a plugin binary:
+//
+//	err := p.Dispatch(ctx, plugintest.Env(plugintest.Action("show")))
+//
+// The error is either the one the handler returned or the reason no handler
+// ran: an id or event name with no registration, an entrypoint kind the
+// environment does not identify, or an event envelope that failed to decode.
+// Run reports those two cases as different exit codes; Dispatch does not
+// distinguish them.
+func (p *Plugin) Dispatch(ctx context.Context, env *Env) error {
+	handler, err := p.bind(env, env.Kind())
+	if err != nil {
+		return err
+	}
+	return handler(ctx)
 }
 
 // Registered reports the entrypoints the registry serves, so that a manifest

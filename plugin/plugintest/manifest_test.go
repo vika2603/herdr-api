@@ -173,3 +173,14 @@ func assertReported(t *testing.T, rec *recorder, want []string) {
 		t.Errorf("reported %d problems, want %d: %v", len(rec.errors), len(want), rec.errors)
 	}
 }
+
+// A handler for an event Herdr never hooks cannot be reached by any manifest
+// entry, so the report names that instead of a missing declaration.
+func TestCheckManifestReportsAnUnreachableEventHandler(t *testing.T) {
+	p := plugin.New()
+	plugin.OnEvent(p, func(context.Context, *plugin.Env, *herdr.LayoutUpdatedEvent) error { return nil })
+
+	rec := check(t, filepath.Join("testdata", "no-entrypoints.toml"), p)
+
+	assertReported(t, rec, []string{`event "layout.updated", which Herdr never fires a plugin hook for`})
+}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -119,5 +120,32 @@ func TestSchemaEventKindsMatchSchema(t *testing.T) {
 	}
 	if !reflect.DeepEqual(schemaEventKinds, want) {
 		t.Errorf("schemaEventKinds =\n%q\nwant\n%q", schemaEventKinds, want)
+	}
+}
+
+func TestHookEventNames(t *testing.T) {
+	got := HookEventNames()
+
+	want := make([]string, len(hookEventKinds))
+	for i, kind := range hookEventKinds {
+		want[i] = dotName(kind)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("HookEventNames() =\n%q\nwant\n%q", got, want)
+	}
+	for _, name := range got {
+		if !isHookEventName(name) {
+			t.Errorf("HookEventNames() returned %q, which isHookEventName rejects", name)
+		}
+	}
+	for _, kind := range hookExcludedKinds {
+		if slices.Contains(got, dotName(kind)) {
+			t.Errorf("HookEventNames() contains %q, which herdr never fires a hook for", dotName(kind))
+		}
+	}
+
+	got[0] = "mutated"
+	if HookEventNames()[0] == "mutated" {
+		t.Error("HookEventNames() shares its backing array between calls")
 	}
 }
