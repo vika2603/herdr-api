@@ -21,9 +21,10 @@ lint:
 
 check: build test lint check-gen
 
-# Live tests against a dedicated named Herdr session (see internal/e2e).
+# Live tests against a Herdr server the suite starts itself (see internal/e2e).
+# -v keeps the coverage report the suite prints visible on a passing run.
 e2e:
-    go test -tags e2e -count=1 ./internal/e2e/...
+    go test -tags e2e -count=1 -v ./internal/e2e/...
 
 # Refresh the schema snapshot from the installed herdr binary.
 schema-update:
