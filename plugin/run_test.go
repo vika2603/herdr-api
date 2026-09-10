@@ -91,7 +91,7 @@ func TestRunDispatchesByKind(t *testing.T) {
 			var got calls
 			var stderr bytes.Buffer
 
-			code := run(context.Background(), handlersRecording(&got, nil), lookupFrom(tt.vars), &stderr)
+			code := run(context.Background(), handlersRecording(&got, nil).bind, lookupFrom(tt.vars), &stderr)
 
 			if code != ExitOK {
 				t.Fatalf("run() = %d, want %d (stderr %q)", code, ExitOK, stderr.String())
@@ -116,7 +116,7 @@ func TestRunPassesDecodedEnvelopeToEventHandler(t *testing.T) {
 	var got calls
 	vars := varsWith(map[string]string{envEvent: "pane.agent_status_changed", envEventJSON: statusEventJSON})
 
-	code := run(context.Background(), handlersRecording(&got, nil), lookupFrom(vars), &bytes.Buffer{})
+	code := run(context.Background(), handlersRecording(&got, nil).bind, lookupFrom(vars), &bytes.Buffer{})
 
 	if code != ExitOK {
 		t.Fatalf("run() = %d, want %d", code, ExitOK)
@@ -147,7 +147,7 @@ func TestRunPassesContextToHandler(t *testing.T) {
 		},
 	}
 
-	code := run(ctx, handlers, lookupFrom(varsWith(map[string]string{envEvent: "startup"})), &bytes.Buffer{})
+	code := run(ctx, handlers.bind, lookupFrom(varsWith(map[string]string{envEvent: "startup"})), &bytes.Buffer{})
 
 	if code != ExitOK {
 		t.Fatalf("run() = %d, want %d", code, ExitOK)
@@ -174,7 +174,7 @@ func TestRunHandlerError(t *testing.T) {
 			var stderr bytes.Buffer
 			handlerErr := errors.New("state directory is not writable")
 
-			code := run(context.Background(), handlersRecording(&got, handlerErr), lookupFrom(tt.vars), &stderr)
+			code := run(context.Background(), handlersRecording(&got, handlerErr).bind, lookupFrom(tt.vars), &stderr)
 
 			if code != ExitHandlerError {
 				t.Fatalf("run() = %d, want %d", code, ExitHandlerError)
@@ -272,7 +272,7 @@ func TestRunRuntimeErrors(t *testing.T) {
 			var got calls
 			var stderr bytes.Buffer
 
-			code := run(context.Background(), tt.handlers(&got), lookupFrom(tt.vars), &stderr)
+			code := run(context.Background(), tt.handlers(&got).bind, lookupFrom(tt.vars), &stderr)
 
 			if code != ExitRuntimeError {
 				t.Fatalf("run() = %d, want %d", code, ExitRuntimeError)
