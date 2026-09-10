@@ -447,7 +447,7 @@ stopped in cleanup. It never touches the caller's session. Its purpose is to
 prove `schema/method-results.json`, which the schema does not state and which
 was derived by reading herdr's handlers: every reachable method is called
 through its generated wrapper and its result type asserted, so a wrong mapping
-fails as a decode or assertion error. It currently exercises 90 of the 102
+fails as a decode or assertion error. It currently exercises 92 of the 102
 methods with no disagreements, and the coverage list is checked against the
 schema so a method can neither disappear nor go unexplained unnoticed.
 
@@ -658,15 +658,20 @@ into its command log, so the standard library is enough.
 
 ## Not built yet
 
-**The last 12 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
+**The last 10 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
 need a real agent process in the pane; a machine with a supported agent CLI
 could cover them and one without would skip. `client_shell.surface.set`,
 `command.invoke`, `popup.close` and `pane.graphics.info` need an attached
 client or the client shell endpoint. `product_announcement.dismiss` and
-`release_notes.dismiss` need state a fresh server does not have.
-`integration.install` and `integration.uninstall` write outside the
-temporary config home, into the user's own agent configuration.
+`release_notes.dismiss` need state a fresh server does not have; the API
+offers no way to create it, since neither has a matching read method.
 `server.live_handoff` would take down the suite's own server.
+
+`integration.install` and `integration.uninstall` used to be on this list,
+because integrations are written under the user's own home rather than under
+`XDG_CONFIG_HOME`. Redirecting `HOME` as well brought them in reach, and the
+default worktree location, `~/.herdr/worktrees`, moved inside the harness
+root with them.
 
 **A tagged release.** There is none, so `go get` resolves a pseudo-version of
 the latest commit.

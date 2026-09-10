@@ -31,8 +31,6 @@ var outOfReach = map[string]string{
 	"agent.start":                  "spawns one of the supported agent CLIs in a pane and waits for it to be detected; the suite starts no real agent",
 	"agent.prompt":                 "needs the agent process in the pane foreground; a shell pane is rejected with agent_not_ready",
 	"agent.send_keys":              "needs an agent started through agent.start; a pane-reported agent is rejected with agent_not_ready",
-	"integration.install":          "writes the integration into the user's per-agent configuration, which lies outside the temporary XDG_CONFIG_HOME",
-	"integration.uninstall":        "removes an integration from the user's per-agent configuration, which lies outside the temporary XDG_CONFIG_HOME",
 }
 
 // expectation is one entry of schema/method-results.json.

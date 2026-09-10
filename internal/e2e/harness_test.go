@@ -157,7 +157,7 @@ func newHarness() (*harness, error) {
 		rec:        newRecorder(),
 		registry:   registry,
 	}
-	for _, dir := range []string{filepath.Join(root, "state"), filepath.Join(root, "data"), filepath.Join(root, "cache"), filepath.Join(root, "tmp")} {
+	for _, dir := range []string{filepath.Join(root, "state"), filepath.Join(root, "data"), filepath.Join(root, "cache"), filepath.Join(root, "tmp"), h.home()} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return h, err
 		}
@@ -221,10 +221,14 @@ func (h *harness) requestID() string {
 	return h.lastReqID
 }
 
+// home is the temporary HOME the server runs under.
+func (h *harness) home() string { return filepath.Join(h.root, "home") }
+
 // serverEnv builds the child environment: the temporary XDG directories, a
-// temporary TMPDIR, and no HERDR_ variable from the caller.
+// temporary HOME and TMPDIR, and no HERDR_ variable from the caller.
 func (h *harness) serverEnv() []string {
 	overridden := map[string]bool{
+		"HOME":            true,
 		"XDG_CONFIG_HOME": true,
 		"XDG_STATE_HOME":  true,
 		"XDG_DATA_HOME":   true,
@@ -242,6 +246,11 @@ func (h *harness) serverEnv() []string {
 		env = append(env, entry)
 	}
 	return append(env,
+		// Agent integrations are written under the user's own home, not
+		// under XDG_CONFIG_HOME, so redirecting HOME is what keeps
+		// integration.install off the caller's machine. It also moves the
+		// default worktree location, ~/.herdr/worktrees, inside the root.
+		"HOME="+h.home(),
 		"XDG_CONFIG_HOME="+h.configHome,
 		// The agent detection manifests are cached in the state directory.
 		// Pointing it at the temporary root keeps the suite off the caller's

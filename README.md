@@ -325,7 +325,7 @@ it came from, because nothing regenerates them.
 ## Status
 
 The client, the session mirror, the plugin authoring layer and the manifest
-parser are usable. 90 of the 102 methods are exercised against a real server
+parser are usable. 92 of the 102 methods are exercised against a real server
 by `internal/e2e`; the rest need an attached client or a running agent. There
 is no tagged release yet, so `go get` resolves a pseudo-version of the latest
 commit. See `docs/design.md` for the design and what is planned next.
