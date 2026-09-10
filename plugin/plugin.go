@@ -4,7 +4,9 @@
 package plugin
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -44,6 +46,14 @@ var ErrNotPluginProcess = errors.New("plugin: HERDR_ENV is not \"1\"")
 
 // ErrMissingPluginID is returned by Load when HERDR_PLUGIN_ID is missing.
 var ErrMissingPluginID = errors.New("plugin: HERDR_PLUGIN_ID is not set")
+
+// ErrNoContext is returned by Context when HERDR_PLUGIN_CONTEXT_JSON was not
+// set.
+var ErrNoContext = errors.New("plugin: HERDR_PLUGIN_CONTEXT_JSON is not set")
+
+// ErrNoEventEnvelope is returned by EventEnvelope when
+// HERDR_PLUGIN_EVENT_JSON was not set.
+var ErrNoEventEnvelope = errors.New("plugin: HERDR_PLUGIN_EVENT_JSON is not set")
 
 // Env is the runtime environment of a plugin command.
 //
@@ -174,4 +184,38 @@ func (e *Env) Kind() EntryKind {
 // so a missing SocketPath surfaces on the first call.
 func (e *Env) Client(opts ...herdr.Option) *herdr.Client {
 	return herdr.New(e.SocketPath, opts...)
+}
+
+// Context decodes ContextJSON.
+//
+// It returns ErrNoContext when Herdr set no HERDR_PLUGIN_CONTEXT_JSON, which
+// happens for entrypoints invoked without an invocation context, and a decode
+// error when the value is not a PluginInvocationContext. Every field of the
+// result is optional, so an entrypoint reached outside a workspace decodes
+// into a context whose fields are all nil.
+func (e *Env) Context() (*herdr.PluginInvocationContext, error) {
+	if len(e.ContextJSON) == 0 {
+		return nil, ErrNoContext
+	}
+	var invocation herdr.PluginInvocationContext
+	if err := json.Unmarshal(e.ContextJSON, &invocation); err != nil {
+		return nil, fmt.Errorf("plugin: decode %s: %w", envContextJSON, err)
+	}
+	return &invocation, nil
+}
+
+// EventEnvelope decodes EventJSON.
+//
+// Only event hooks receive HERDR_PLUGIN_EVENT_JSON; every other entrypoint
+// kind gets ErrNoEventEnvelope. An event name this module does not know
+// surfaces as *herdr.UnknownEventError, which carries the raw payload.
+func (e *Env) EventEnvelope() (*herdr.EventEnvelope, error) {
+	if len(e.EventJSON) == 0 {
+		return nil, ErrNoEventEnvelope
+	}
+	var envelope herdr.EventEnvelope
+	if err := json.Unmarshal(e.EventJSON, &envelope); err != nil {
+		return nil, fmt.Errorf("plugin: decode %s: %w", envEventJSON, err)
+	}
+	return &envelope, nil
 }
