@@ -513,6 +513,7 @@ to look, not a guarantee it still exists.
 | Manifest validation rules, limits and error codes | `src/app/api/plugins/manifest.rs` |
 | The 22 events a manifest hook may name, narrower than the 26 `EventKind` values | `src/api/schema/events.rs`, `PLUGIN_HOOK_EVENT_KINDS` |
 | Popup size parsing, integer or percentage | `src/popup_size.rs` |
+| `plugin.pane.open` with `split` placement takes `target_pane_id` alone; a `workspace_id` or `direction` beside it is `invalid_params` | measured against a running server, `internal/e2e/plugin_test.go` |
 | `released` on `pane.agent_detected` meaning the agent handed the pane back | `src/events.rs`, `AppEvent::HookAgentReleased` |
 | The set of error codes | `encode_error` callers across `src/app/api/` |
 
