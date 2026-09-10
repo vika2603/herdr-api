@@ -1,0 +1,9 @@
+id = "example.invalid"
+name = "Invalid"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux"]
+
+[[actions]]
+id = "show"
+command = ["./plugin"]

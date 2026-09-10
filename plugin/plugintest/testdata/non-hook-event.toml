@@ -1,0 +1,9 @@
+id = "example.non-hook-event"
+name = "Non-hook event"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux"]
+
+[[events]]
+on = "pane.updated"
+command = ["./plugin"]

@@ -1,0 +1,19 @@
+id = "example.unserved"
+name = "Unserved"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux"]
+
+[[actions]]
+id = "show"
+title = "Show"
+command = ["./plugin"]
+
+[[panes]]
+id = "board"
+title = "Board"
+command = ["./plugin"]
+
+[[events]]
+on = "pane.created"
+command = ["./plugin"]

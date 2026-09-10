@@ -1,0 +1,27 @@
+id = "example.matching"
+name = "Matching"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["linux", "macos"]
+
+[[startup]]
+command = ["./plugin"]
+
+[[actions]]
+id = "show"
+title = "Show"
+command = ["./plugin"]
+
+[[actions]]
+id = "clear"
+title = "Clear"
+command = ["./plugin"]
+
+[[panes]]
+id = "board"
+title = "Board"
+command = ["./plugin"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["./plugin"]
