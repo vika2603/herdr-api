@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/vika2603/herdr-client"
+	"github.com/vika2603/herdr-client/plugin/manifest"
 	"github.com/vika2603/herdr-client/plugin/plugintest"
 )
 
@@ -70,8 +71,11 @@ func TestNewPlan(t *testing.T) {
 			if got := herdr.Value(p.Metadata.Tokens["issue"]); got != test.url {
 				t.Errorf("issue token = %q, want %q", got, test.url)
 			}
-			if p.Metadata.Source != metadataSource {
-				t.Errorf("metadata source = %q, want %q", p.Metadata.Source, metadataSource)
+			// Comparing against the constant would only restate the
+			// assignment. Herdr attributes reported tokens to their source,
+			// so what matters is that it is this plugin's own id.
+			if p.Metadata.Source != manifestPluginID(t) {
+				t.Errorf("metadata source = %q, want the plugin id %q", p.Metadata.Source, manifestPluginID(t))
 			}
 		})
 	}
@@ -178,4 +182,16 @@ func write(t *testing.T, dir, content string) {
 	if err := os.WriteFile(filepath.Join(dir, configName), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// manifestPluginID reads the id herdr-plugin.toml declares, so a source
+// constant that drifts from the manifest is a test failure rather than a
+// mis-attributed token at run time.
+func manifestPluginID(t *testing.T) string {
+	t.Helper()
+	parsed, _, err := manifest.Parse(manifestPath)
+	if err != nil {
+		t.Fatalf("%s: %v", manifestPath, err)
+	}
+	return parsed.ID
 }

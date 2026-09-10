@@ -55,12 +55,17 @@ that carry no discriminator.
 | --- | --- | --- |
 | `client.go` `stream.go` `dial_*.go` `socketpath.go` `errors.go` `ptr.go` | Transport, error codes, pointer helpers | hand |
 | `subscribe.go` `session.go` | Typed event stream, live session mirror | hand |
+| `graphics.go` | The `pane.graphics.stream` frame stream | hand |
+| `layout.go` | Walking an applied layout to its panes | hand |
 | `unions_manual.go` | The four unions without a discriminator | hand |
 | `*_gen.go` | Types, results, events, and a wrapper per method | generated |
 | `cmd/herdr-apigen` `internal/gen` | The generator | hand |
 | `internal/cmd/herdrcheck` | Drift detection against the installed herdr | hand |
-| `plugin` `plugin/manifest` | Plugin environment, dispatch, manifest | hand |
+| `plugin` `plugin/manifest` | Plugin environment, registry, manifest | hand |
+| `plugin/plugintest` | A plugin environment and an API socket built for tests | hand |
 | `examples/agent-status` | A worked plugin serving three entrypoint kinds | hand |
+| `examples/agent-board` | A pane entrypoint on the session mirror | hand |
+| `examples/worktree-bootstrap` | A link handler that opens a ready workspace | hand |
 | `internal/e2e` | The suite that exercises the API against a real server | hand |
 | `schema` | The snapshot, the method result table, the accepted gaps | recorded |
 
@@ -192,7 +197,12 @@ func decodeLayoutNode(data []byte) (LayoutNode, error)  // reads the discriminat
 ```
 
 The marker and `MarshalJSON` take value receivers and the decoder returns the
-value form, so one spelling covers both directions. The decoder returned a
+value form, so one spelling covers both directions. The cost is that two
+decoded union values cannot be compared with `==` when the variant holds a
+slice or map, which `LayoutNodePane` and three `AgentViewFilter` variants do:
+the comparison panics at run time, where the pointer form would have compared
+addresses. Distinguish variants with a type switch, and do not use a union
+value as a map key. The decoder returned a
 pointer at first, which meant a caller wrote `LayoutNodePane{…}` to build a
 layout and `*LayoutNodePane` to read one back. Both forms satisfy the
 interface, so the wrong one compiles and matches nothing; writing
@@ -552,9 +562,11 @@ os.Exit(p.Run(ctx))
 
 `OnEvent` is a free function rather than a method because it takes a type
 parameter: the generated event types implement `EventName`, so the name comes
-from the handler's own argument and the author never writes the string. A
-payload shared with a subscription-only event is rejected at registration,
-since the name would be ambiguous.
+from the handler's own argument and the author never writes the string.
+Registering a payload herdr never delivers to a hook is accepted here, because
+the registry alone cannot tell one from a payload the manifest simply has not
+declared yet; `plugintest.CheckManifest` reports it, reading the hook set from
+`manifest.HookEventNames`.
 
 Registration mistakes panic rather than surfacing at dispatch: a nil handler,
 an empty id, or a second registration for an id already taken. Registration is

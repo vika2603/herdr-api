@@ -101,10 +101,11 @@ func clickedURL(env *plugin.Env) string {
 
 // plan is the request sequence one gesture turns into, decided before any
 // call is made, so that everything that can be wrong about a bootstrap is
-// wrong before the first request. Each request here is missing exactly the id
-// an earlier response carries, which bootstrap fills in. The layout is built
-// by a method instead, because its panes need the checkout path only
-// worktree.create can report.
+// wrong before the first request. Each request is left missing the one id it
+// cannot know yet, which bootstrap fills in: the workspace the action was
+// invoked from for the first call, and the response of the previous call for
+// the rest. The layout is built by a method instead, because its panes need
+// the checkout path only worktree.create can report.
 type plan struct {
 	Worktree herdr.WorktreeCreateParams
 	Metadata herdr.WorkspaceReportMetadataParams

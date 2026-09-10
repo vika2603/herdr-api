@@ -67,8 +67,23 @@ func onOpen(ctx context.Context, env *plugin.Env) error {
 	return err
 }
 
-// onBoard mirrors the session and redraws the board until the pane closes.
+// onBoard runs the board and reports a close as success. Herdr records the
+// exit status of a plugin command, so the one thing this must not do is enter
+// a pane the user closed as a failed run. The context ends at the first
+// shutdown signal, and the call it lands in decides which error comes back:
+// mid-bootstrap it is context.Canceled, and a closed mirror is
+// ErrStreamClosed, so both are answered here rather than in one branch of the
+// loop.
 func onBoard(ctx context.Context, env *plugin.Env) error {
+	err := runBoard(ctx, env)
+	if errors.Is(err, context.Canceled) || errors.Is(err, herdr.ErrStreamClosed) {
+		return nil
+	}
+	return err
+}
+
+// runBoard mirrors the session and redraws the board until the pane closes.
+func runBoard(ctx context.Context, env *plugin.Env) error {
 	client := env.Client()
 	session, err := herdr.OpenSession(ctx, client)
 	if err != nil {
@@ -85,19 +100,13 @@ func onBoard(ctx context.Context, env *plugin.Env) error {
 	for {
 		event, err := session.Next(ctx)
 		if err != nil {
+			// An event a newer server added never reached the mirror, so the
+			// board still shows the state it had and keeps running.
 			var unknown *herdr.UnknownEventError
-			switch {
-			case errors.Is(err, context.Canceled), errors.Is(err, herdr.ErrStreamClosed):
-				// The pane was closed, or the mirror gave up reconnecting.
-				// Neither is a failure of the board.
-				return nil
-			case errors.As(err, &unknown):
-				// An event a newer server added. It never reached the mirror,
-				// so the board still shows the state it had.
+			if errors.As(err, &unknown) {
 				continue
-			default:
-				return err
 			}
+			return err
 		}
 		frame = frame.after(event).from(session)
 		draw(os.Stdout, frame)
@@ -137,17 +146,17 @@ type board struct {
 	Note   string
 }
 
-// from reads the mirror into the frame. The accessors return copies, so the
-// frame stays as it was read while the next event is applied.
+// from reads the mirror into the frame. Snapshot returns the whole mirror
+// under one lock, so everything a frame shows describes the same moment; the
+// accessors would take the lock once per collection.
 func (b board) from(s *herdr.Session) board {
-	b.Workspaces = s.Workspaces()
-	b.Tabs = s.Tabs()
-	b.Agents = s.Agents()
-	b.Panes = make(map[string]herdr.PaneInfo, len(b.Agents))
-	for _, agent := range b.Agents {
-		if pane, ok := s.Pane(agent.PaneID); ok {
-			b.Panes[agent.PaneID] = pane
-		}
+	snapshot := s.Snapshot()
+	b.Workspaces = snapshot.Workspaces
+	b.Tabs = snapshot.Tabs
+	b.Agents = snapshot.Agents
+	b.Panes = make(map[string]herdr.PaneInfo, len(snapshot.Panes))
+	for _, pane := range snapshot.Panes {
+		b.Panes[pane.PaneID] = pane
 	}
 	return b
 }
@@ -168,7 +177,7 @@ func (b board) after(event herdr.Event) board {
 
 // paneLabel names the pane an agent runs in. The label is a pane field that
 // AgentInfo does not carry, which is why the frame keeps the panes too; a pane
-// without a label, or one the mirror no longer holds, is named by its id.
+// without a label is named by its id.
 func (b board) paneLabel(paneID string) string {
 	pane, ok := b.Panes[paneID]
 	if !ok {

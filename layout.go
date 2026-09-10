@@ -15,8 +15,11 @@ package herdr
 //		}
 //	}
 //
-// A nil root, and a variant a newer server adds that this package cannot
-// decode, contribute no panes.
+// Decoding produces the value form of each variant, but a pointer satisfies
+// LayoutNode too, so a tree built by hand with &LayoutNodePane{} is walked
+// the same way rather than coming back empty. A nil root contributes no
+// panes; a variant this package cannot decode never reaches here, because
+// decoding the layout fails first.
 func LayoutPanes(root LayoutNode) []LayoutNodePane {
 	return appendLayoutPanes(nil, root)
 }
@@ -25,7 +28,11 @@ func appendLayoutPanes(panes []LayoutNodePane, node LayoutNode) []LayoutNodePane
 	switch node := node.(type) {
 	case LayoutNodePane:
 		return append(panes, node)
+	case *LayoutNodePane:
+		return append(panes, *node)
 	case LayoutNodeSplit:
+		return appendLayoutPanes(appendLayoutPanes(panes, node.First), node.Second)
+	case *LayoutNodeSplit:
 		return appendLayoutPanes(appendLayoutPanes(panes, node.First), node.Second)
 	default:
 		return panes

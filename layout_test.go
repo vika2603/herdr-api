@@ -30,6 +30,22 @@ func TestLayoutPanesWalksLeftToRight(t *testing.T) {
 	}
 }
 
+// A pointer satisfies LayoutNode, so a tree built by hand with pointers must
+// walk the same as the value form decoding produces.
+func TestLayoutPanesWalksThePointerForm(t *testing.T) {
+	root := &LayoutNodeSplit{
+		Direction: SplitDirectionRight,
+		Ratio:     0.5,
+		First:     &LayoutNodePane{PaneID: Ptr("w1:p1")},
+		Second:    LayoutNodePane{PaneID: Ptr("w1:p2")},
+	}
+
+	panes := LayoutPanes(root)
+	if len(panes) != 2 || Value(panes[0].PaneID) != "w1:p1" || Value(panes[1].PaneID) != "w1:p2" {
+		t.Errorf("panes = %+v, want both leaves in order", panes)
+	}
+}
+
 func TestLayoutPanesOnALeafAndOnNothing(t *testing.T) {
 	if got := LayoutPanes(LayoutNodePane{PaneID: Ptr("w1:p1")}); len(got) != 1 {
 		t.Errorf("a single pane yielded %d panes, want 1", len(got))
