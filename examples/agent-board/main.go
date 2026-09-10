@@ -36,9 +36,13 @@ func main() {
 	// A pane entrypoint runs until the user closes the pane, which delivers
 	// SIGHUP and then SIGTERM. Without this context the process would be
 	// killed in the middle of a frame instead of ending its loop.
+	//
+	// The signal handlers are released before os.Exit rather than in a defer,
+	// which os.Exit would skip.
 	ctx, stop := plugin.ShutdownContext(context.Background())
-	defer stop()
-	os.Exit(newPlugin().Run(ctx))
+	code := newPlugin().Run(ctx)
+	stop()
+	os.Exit(code)
 }
 
 // newPlugin registers one handler per entrypoint of herdr-plugin.toml.
