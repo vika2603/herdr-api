@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	suite.stop()
-	writeReport(os.Stdout, methods, suite.rec.covered(), suite.rec.findings(), suite.version, suite.protocol)
+	fmt.Print(report(methods, suite.rec.covered(), suite.rec.findings(), suite.version, suite.protocol))
 	if code != 0 {
 		fmt.Fprintf(os.Stderr, "e2e: server output:\n%s\n", suite.serverLog())
 	}

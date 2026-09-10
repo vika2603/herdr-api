@@ -252,7 +252,7 @@ func (h *harness) waitReady() error {
 		select {
 		case err := <-h.waited:
 			h.waited = nil
-			return fmt.Errorf("server exited before it was ready (%v): %s", err, h.serverLog())
+			return fmt.Errorf("server exited before it was ready: %w; output: %s", err, h.serverLog())
 		default:
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -266,7 +266,7 @@ func (h *harness) waitReady() error {
 		lastErr = err
 		time.Sleep(100 * time.Millisecond)
 	}
-	return fmt.Errorf("server did not answer ping within %s (%v): %s", startTimeout, lastErr, h.serverLog())
+	return fmt.Errorf("server did not answer ping within %s: %w; output: %s", startTimeout, lastErr, h.serverLog())
 }
 
 // stop asks the server to stop, waits for the process and kills it when it
