@@ -429,13 +429,9 @@ func (h *harness) coverStream(t *testing.T, method string, stream *herdr.Stream,
 	}
 	ack, err := herdr.DecodeResult(stream.Ack())
 	if err != nil {
-		want := h.expect(t, method)
 		var unknown *herdr.UnknownResultError
 		if errors.As(err, &unknown) {
-			h.rec.reportDisagreement(disagreement{
-				method: method, requestID: requestID,
-				want: want.String(), got: unknown.Type, response: string(unknown.Data),
-			})
+			h.disagree(method, requestID, h.expect(t, method), unknown.Type, string(unknown.Data))
 		}
 		t.Errorf("%s (request %s): decode acknowledgement %s: %v", method, requestID, stream.Ack(), err)
 		return false
