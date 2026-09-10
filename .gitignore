@@ -10,3 +10,9 @@ coverage.*
 /herdr-client
 /herdr-apigen
 /agent-status
+/agent-board
+
+# Binaries the [[build]] command of each example manifest produces in place.
+# Listed one by one: a herdr-* glob here would also cover herdr-plugin.toml.
+/examples/agent-status/herdr-agent-status
+/examples/agent-board/herdr-agent-board

@@ -250,7 +250,12 @@ naming an event that herdr never fires for hooks is a warning, a duplicate
 action id is an error. `manifest.HookEventNames` lists the events that are
 eligible.
 
-`examples/` holds worked plugins built on all of this.
+`examples/` holds worked plugins built on all of this:
+
+| Example                 | Shows                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `examples/agent-status`  | A startup hook, an event hook and an action in one binary, over plugin state |
+| `examples/agent-board`   | A pane entrypoint on the session mirror, redrawn until the pane closes       |
 
 ## Layout
 
