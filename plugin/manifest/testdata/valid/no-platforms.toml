@@ -1,0 +1,11 @@
+# A manifest that leaves platforms undeclared and hooks an unknown event.
+# Both are warnings rather than errors.
+
+id = "example.warnings"
+name = "Warnings"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+
+[[events]]
+on = "pane.exploded"
+command = ["true"]
