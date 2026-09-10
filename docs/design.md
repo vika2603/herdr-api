@@ -258,6 +258,40 @@ configuration and references the handwritten names: `PopupSize` (integer or a
   captured from a live server under `testdata/`.
 - No third-party dependencies.
 
+## Graphics streaming
+
+`pane.graphics.stream` keeps its connection open and sends binary frames, so
+`graphics.go` implements it by hand on the transport's own helpers:
+
+```go
+func (c *Client) PaneGraphicsStream(ctx context.Context, params PaneGraphicsStreamParams) (*GraphicsStream, error)
+func (s *GraphicsStream) SendFrame(ctx context.Context, frame GraphicsFrame) error
+func (s *GraphicsStream) SendFileFrame(ctx context.Context, frame GraphicsFileFrame) (*PaneGraphicsFrameAckResponse, error)
+func (s *GraphicsStream) Wait(ctx context.Context) error
+func (s *GraphicsStream) Close() error
+```
+
+An inline frame is one JSON header line followed by exactly `data_length`
+raw bytes and draws no reply, which is why `SendFrame` returns only an error.
+A file frame names an immutable file the terminal reads itself, and the
+server answers it with `pane_graphics_frame_ack` once the terminal has
+accepted it. That variant is the only one in `method-results.json` that no
+method returns, which is consistent with it belonging here. Closing the
+connection clears the layer, and the server ends the stream on an error
+response or on a frame that stalls.
+
+`OpenStream` cannot serve this: it hands the connection to a reader goroutine
+that never writes, and a frame stream has to keep writing. The open sequence
+is therefore repeated in `graphics.go` over the same package helpers.
+
+What the fake server proves is the framing: two frames in sequence parse only
+if the first body was consumed whole. Against a live server only the entry
+point was checked, read-only, by opening a stream for a pane id that cannot
+exist and getting `pane_not_found`, which shows the method is accepted and
+reaches its handler. Frame acceptance, acknowledgements, timeouts and the
+error codes are backed by the herdr sources rather than by execution, because
+exercising them means drawing into a real pane.
+
 ## Session mirror
 
 ```go
@@ -577,13 +611,6 @@ matter. No logging helper either: Herdr already captures stdout and stderr
 into its command log, so the standard library is enough.
 
 ## Not built yet
-
-**Graphics streaming.** `pane.graphics.stream` is the only method the server
-accepts that no wrapper reaches. After the acknowledgement the client sends
-one JSON header and then exactly `data_length` raw bytes per frame on a
-connection that stays open, so it needs a hand-written type beside the
-transport rather than a generated wrapper. `pane_graphics_frame_ack` is the
-one result variant no method in `method-results.json` returns, which fits.
 
 **The last 12 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
 need a real agent process in the pane; a machine with a supported agent CLI
