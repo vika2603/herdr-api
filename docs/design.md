@@ -1,19 +1,22 @@
-# Module design
+# Design
 
-This document is the architecture contract for `github.com/vika2603/herdr-client`
-and the interface agreement between the parts that are developed in parallel.
-Every statement about the protocol is backed by `schema/herdr-client.schema.json`
-(herdr 0.9.0, protocol 22) or by the herdr v0.9.0 sources.
+This document describes how `github.com/vika2603/herdr-client` is built and
+why, and what is still missing. Every statement about the protocol is backed
+by `schema/herdr-api.schema.json` (herdr 0.9.0, protocol 22), by the herdr
+v0.9.0 sources, or by a test in this repository.
 
-## Goal
+## What the module is
 
-Provide a Go client for Herdr: the socket API, a live mirror of the session,
-and the runtime helpers a Herdr plugin written in Go needs. The module started
-as an API wrapper and was renamed from herdr-api to herdr-client once it grew
-past that. Types and method wrappers are generated from the official
-schema. Handwritten code covers only what the schema cannot express: the
-transport, the plugin process environment, and a few unions without a
-discriminator field.
+A Go client for Herdr. It carries the whole socket API, a cache that mirrors a
+live session, and the pieces a Herdr plugin written in Go needs. It began as a
+wrapper over the API, which is where the original name herdr-api came from,
+and was renamed once it grew past that.
+
+Most of the surface is generated from the schema the herdr binary prints, so
+the client follows the server rather than a hand-written guess of it. Only
+what the schema cannot express is hand-written: the transport, the session
+mirror, the plugin process environment, the manifest parser, and four unions
+that carry no discriminator.
 
 ## Verified protocol facts
 
@@ -46,30 +49,26 @@ discriminator field.
   That relation is maintained in `schema/method-results.json`, derived from the
   v0.9.0 handler sources.
 
-## Layout and ownership
+## Layout
 
-| Path | Content | Phase 1 branch |
+| Path | Contents | Written by |
 | --- | --- | --- |
-| `client.go` `stream.go` `dial_unix.go` `dial_windows.go` `socketpath.go` `errors.go` and their tests | Handwritten transport | `feat/transport` |
-| `*_gen.go` `unions_manual.go` `generate.go`, tests for generated types, `testdata/` | Generated code and its handwritten complements | `feat/gen` |
-| `cmd/herdr-clientgen/` `internal/gen/` | Generator | `feat/gen` |
-| `schema/` | Schema snapshot, method result table | `feat/gen` (may only correct `method-results.json`) |
-| `plugin/` `plugin/manifest/` | Plugin runtime, manifest parsing | `feat/plugin` |
-| `internal/e2e/` | Tests against a live Herdr session (build tag `e2e`) | Phase 2 |
-| `examples/` | Example plugins | Phase 2 |
+| `client.go` `stream.go` `dial_*.go` `socketpath.go` `errors.go` `ptr.go` | Transport, error codes, pointer helpers | hand |
+| `subscribe.go` `session.go` | Typed event stream, live session mirror | hand |
+| `unions_manual.go` | The four unions without a discriminator | hand |
+| `*_gen.go` | Types, results, events, and a wrapper per method | generated |
+| `cmd/herdr-apigen` `internal/gen` | The generator | hand |
+| `internal/cmd/herdrcheck` | Drift detection against the installed herdr | hand |
+| `plugin` `plugin/manifest` | Plugin environment, dispatch, manifest | hand |
+| `examples/agent-status` | A worked plugin serving three entrypoint kinds | hand |
+| `internal/e2e` | The suite that exercises the API against a real server | hand |
+| `schema` | The snapshot, the method result table, the accepted gaps | recorded |
 
-File ownership does not overlap. The generator branch must not modify the
-transport files; the transport branch must not depend on any generated type.
-Generated code depends only on the transport signatures frozen below.
-
-## Root package `herdr`: transport API (frozen)
+## Transport
 
 ```go
-type Client struct{ /* private */ }
-type Option func(*Client)
-
 func New(socketPath string, opts ...Option) *Client          // no I/O
-func NewFromEnv(opts ...Option) (*Client, error)             // see ResolveSocketPath("")
+func NewFromEnv(opts ...Option) (*Client, error)
 func ResolveSocketPath(session string) (string, error)
 func WithDialTimeout(d time.Duration) Option
 func WithRequestIDs(next func() string) Option
@@ -78,47 +77,36 @@ func (c *Client) SocketPath() string
 func (c *Client) Call(ctx context.Context, method string, params, result any) error
 func (c *Client) CallRaw(ctx context.Context, method string, params any) (json.RawMessage, error)
 func (c *Client) OpenStream(ctx context.Context, method string, params any) (*Stream, error)
-
-type Stream struct{ /* private */ }
-type RawEvent struct {
-    Event string          `json:"event"`
-    Data  json.RawMessage `json:"data"`
-}
-func (s *Stream) Ack() json.RawMessage                       // result object of the opening response
-func (s *Stream) Next(ctx context.Context) (*RawEvent, error)
-func (s *Stream) Close() error
-
-type Error struct{ Method, Code, Message string }
-func (e *Error) Error() string
-func IsCode(err error, code string) bool
-var ErrStreamClosed error
 ```
 
-Behaviour:
+`Call` and `CallRaw` dial a connection, write one request line, read one
+response line and close, because that is all the server allows. A `nil`
+`params` is sent as `{}`. An error response becomes `*Error` carrying the
+method. Cancelling the context closes the connection, which is the only way to
+unblock a read on every platform, and the call reports `ctx.Err()`.
 
-- `Call`/`CallRaw`: dial, write one line `{"id","method","params"}` (a `nil`
-  `params` is sent as `{}`), read one line. If the `error` field is present
-  return `*Error` with `Method` set; otherwise decode `result` into `result`
-  (discard when `nil`). Context cancellation and deadlines unblock the call by
-  closing the connection and are reported as `ctx.Err()`.
-- `ResolveSocketPath(session)`: with a non-empty `session` return
-  `<config>/sessions/<session>/herdr.sock`; otherwise consult
-  `HERDR_SOCKET_PATH`, then `HERDR_SESSION`, then the default
-  `<config>/herdr.sock`. `<config>` is `$XDG_CONFIG_HOME/herdr` or
-  `~/.config/herdr`; on Windows follow `src/server/socket_paths.rs` in herdr.
-- `OpenStream`: send the request and read the first line. On `error` return
-  `*Error`. On success keep `result` for `Ack()`, then `Next` decodes each
-  further line as a `RawEvent`. After the connection closes, `Next` returns
-  `ErrStreamClosed` (possibly wrapping the underlying error).
-- Default request ids look like `herdr-go-<sequence>`.
-- The transport has no third-party dependencies. Windows named pipes are opened
-  with `os.OpenFile` on `\\.\pipe\` + path.
+`OpenStream` keeps the connection and hands back a `*Stream` whose `Next`
+decodes each pushed line into a `RawEvent`; `Ack` holds the result of the
+response that opened it. Nothing is ever written to that connection again,
+because the server closes a streaming connection as soon as the client sends
+anything else. `Close` unblocks a waiting `Next`, which then reports
+`ErrStreamClosed`.
 
-## Root package `herdr`: generated code contract
+`ResolveSocketPath` follows herdr: an explicit session name wins, then
+`HERDR_SOCKET_PATH`, then `HERDR_SESSION`, then the default session. The
+config directory is `$XDG_CONFIG_HOME/herdr` or the platform default. A herdr
+built with debug assertions uses `herdr-dev` instead, so a resolved path only
+reaches a release build; `HERDR_SOCKET_PATH` is the way to a debug one.
 
-Generator inputs: `schema/herdr-client.schema.json` and
+Optional request fields that are not strings are pointers, so that leaving one
+unset differs from sending its zero value. `Ptr` and `Value` cover the 134
+such fields without a named variable per field.
+
+## Generated code
+
+Generator inputs: `schema/herdr-api.schema.json` and
 `schema/method-results.json`. All output files live in the root package and
-start with `// Code generated by herdr-clientgen. DO NOT EDIT.`:
+start with `// Code generated by herdr-apigen. DO NOT EDIT.`:
 
 | File | Content |
 | --- | --- |
@@ -129,7 +117,7 @@ start with `// Code generated by herdr-clientgen. DO NOT EDIT.`:
 | `methods_gen.go` | `Method*` constants and the `(*Client)` wrappers |
 
 `generate.go` carries
-`//go:generate go run ./cmd/herdr-clientgen -schema schema/herdr-client.schema.json -methods schema/method-results.json -out .`.
+`//go:generate go run ./cmd/herdr-apigen -schema schema/herdr-api.schema.json -methods schema/method-results.json -out .`.
 
 ### Naming
 
@@ -247,7 +235,7 @@ Single-result wrappers are implemented uniformly as `CallRaw` →
 `DecodeResult` → type assertion; a failed assertion returns
 `*UnexpectedResultError{Method, Want, Got}`.
 
-### Handwritten complements (`unions_manual.go`, owned by `feat/gen`)
+### Handwritten complements (`unions_manual.go`)
 
 Unions without a discriminator are handwritten types implementing
 `MarshalJSON`/`UnmarshalJSON`; the generator skips these definitions via its
@@ -255,7 +243,7 @@ configuration and references the handwritten names: `PopupSize` (integer or a
 `"80%"` string), `AgentViewValue` (string | bool | uint64 | `{"context":...}`),
 `AgentViewField` and `AgentViewSortField` (built-in enum | `{"token":...}`).
 
-### Generator (`cmd/herdr-clientgen`, `internal/gen`)
+### Generator (`cmd/herdr-apigen`, `internal/gen`)
 
 - Implements only the JSON Schema subset the schema uses: `type` (string or
   array), `properties`, `required`, `$ref`, `oneOf`/`anyOf`, `enum`, `const`,
@@ -270,113 +258,16 @@ configuration and references the handwritten names: `PopupSize` (integer or a
   captured from a live server under `testdata/`.
 - No third-party dependencies.
 
-## Package `plugin`
-
-```go
-type Env struct {
-    PluginID, PluginRoot, ConfigDir, StateDir string
-    SocketPath, BinPath                      string
-    WorkspaceID, TabID, PaneID               string   // may be empty
-    ActionID, EntrypointID                   string   // present depending on the entrypoint kind
-    Event                                    string   // dotted event name; "startup" for startup hooks
-    ContextJSON, EventJSON                   []byte   // raw JSON, may be empty
-    ClickedURL, LinkHandlerID                string
-}
-func Load() (*Env, error)                 // fails when HERDR_ENV != "1" or HERDR_PLUGIN_ID is missing
-func LoadFrom(lookup func(string) (string, bool)) (*Env, error)
-func (e *Env) Kind() EntryKind            // Startup | Action | Event | Pane
-func (e *Env) Client(opts ...herdr.Option) *herdr.Client
-```
-
-Phase 2, once the generated types are merged: `(e *Env) Context()
-(*herdr.PluginInvocationContext, error)`, `(e *Env) EventEnvelope()
-(*herdr.EventEnvelope, error)`, and `Run(ctx, Handlers) int` dispatching by
-entrypoint kind.
-
-## Package `plugin/manifest`
-
-Models and validates `herdr-plugin.toml`: top-level `id`, `name`, `version`
-and `min_herdr_version` are required; `id` uses ASCII letters, digits, `.`,
-`:`, `_`, `-`; local ids (actions, panes, link handlers) contain no `.` and are
-unique within their kind; `platforms` values are `linux`, `macos`, `windows`;
-`command` is a non-empty argv; `link_handlers[].action` must reference an
-action of the same plugin; `events[].on` is compared against the known dotted
-event names and an unknown name produces a warning rather than an error,
-matching herdr. TOML parsing may use `github.com/BurntSushi/toml`, the only
-third-party dependency permitted for this package.
-
-## Error codes
-
-The schema does not enumerate error codes. The following, taken from the
-herdr v0.9.0 sources, are provided as constants in `errors.go` while plain
-string comparison remains possible:
-`invalid_request`, `invalid_params`, `internal_error`, `timeout`, `not_found`,
-`pane_not_found`, `workspace_not_found`, `tab_not_found`, `agent_not_found`,
-`plugin_not_found`, `plugin_disabled`, `plugin_pane_not_found`,
-`platform_unsupported`, `feature_disabled`, `ui_busy`, `popup_not_open`,
-`stream_conflict`, `stream_closed`, `agent_blocked`, `agent_prompt_stalled`,
-`workspace_group_close_required`, `unsupported_in_app_mode`.
-
-## Versioning and compatibility
-
-- Generated code decodes known fields only and ignores unknown ones. Unknown
-  `type`/`event` values surface as `Unknown*Error` instead of failing.
-- To upgrade herdr: replace `schema/herdr-client.schema.json`, complete
-  `method-results.json`, regenerate, and run `just check`.
-- At runtime, compare the `protocol` returned by `Ping` with `SchemaProtocol`
-  to detect a server newer than the generated code.
-
-## Phase 2
-
-Phase 1 delivered the transport, the generated API surface and the plugin
-manifest. Phase 2 makes the module usable for writing a real plugin and proves
-the generated surface against a running server. The three tracks own disjoint
-files and can be developed in parallel.
-
-| Track | Files | Branch |
-| --- | --- | --- |
-| Plugin runtime | `plugin/` (except `plugin/manifest/`), `examples/` | `feat/plugin-runtime` |
-| Session mirror | `session.go`, `subscribe.go` and their tests in the root package | `feat/session` |
-| End-to-end verification | `internal/e2e/` | `feat/e2e` |
-
-### Plugin runtime
-
-`plugin.Env` gains typed accessors over the raw JSON it already carries, and a
-dispatcher so a single binary can serve every entrypoint a manifest declares:
-
-```go
-func (e *Env) Context() (*herdr.PluginInvocationContext, error)
-func (e *Env) EventEnvelope() (*herdr.EventEnvelope, error)   // event hooks only
-
-type Handlers struct {
-    Startup func(context.Context, *Env) error
-    Action  func(context.Context, *Env, string) error          // action id
-    Event   func(context.Context, *Env, *herdr.EventEnvelope) error
-    Pane    func(context.Context, *Env, string) error          // entrypoint id
-}
-func Run(ctx context.Context, h Handlers) int
-```
-
-`Run` loads the environment, selects the handler by `Env.Kind()`, and returns a
-process exit code. A missing handler for the invoked kind is an error, not a
-silent success, because Herdr records the exit status in its command log. A
-handler's `error` is written to stderr, which Herdr captures in that same log.
-
-`examples/` holds one worked plugin exercising a startup hook, an action and an
-event hook through `Run`, with a manifest that
-`plugin/manifest` validates in a test.
-
-### Session mirror
-
-Two additions to the root package, both built on `OpenStream`:
+## Session mirror
 
 ```go
 func (c *Client) Subscribe(ctx context.Context, subs ...Subscription) (*EventStream, error)
 func (s *EventStream) Next(ctx context.Context) (Event, error)
 
-type Session struct{ /* private */ }
+func MirrorSubscriptions() []Subscription
 func OpenSession(ctx context.Context, c *Client, subs ...Subscription) (*Session, error)
 func (s *Session) Workspaces() []WorkspaceInfo
+func (s *Session) Tabs() []TabInfo
 func (s *Session) Pane(paneID string) (PaneInfo, bool)
 func (s *Session) Agents() []AgentInfo
 func (s *Session) Layout(tabID string) (PaneLayoutSnapshot, bool)
@@ -384,28 +275,109 @@ func (s *Session) Next(ctx context.Context) (Event, error)
 func (s *Session) Close() error
 ```
 
-`OpenSession` implements the bootstrap the socket API documents: subscribe
-first, buffer what arrives, call `session.snapshot`, install it, then apply the
-buffered events in order and keep streaming. Each event updates the cache
-before `Next` returns it, so a caller that reads the cache after `Next` sees
-the state that event produced. `Session` is safe for concurrent readers.
+A subscription starts when the server accepts it and never replays what came
+before, so a client that wants complete state has to subscribe first and take
+the snapshot second. `OpenSession` does exactly that: it subscribes, buffers
+what arrives, calls `session.snapshot`, installs it, applies the buffer in
+order and then keeps streaming. Applying an event twice has to be safe for
+that to work, which it is because every handler assigns state rather than
+adjusting it.
 
-A server restart, which happens on live handoff, ends the stream. `Session`
-reconnects and re-bootstraps rather than reporting the stream as finished, and
-surfaces the gap as one synthetic resync event so callers can discard derived
-state. Reconnection backs off and stops when its context is done.
+The cache advances only as `Next` delivers, so reading an accessor after
+`Next` shows the state that event produced. Accessors copy what they return
+and the mirror is safe for concurrent readers.
 
-### End-to-end verification
+A server restart, which is what live handoff does, ends the stream.`Session`
+reconnects, bootstraps again, and reports the gap as one `*ResyncEvent` so a
+caller can drop anything it derived from the older state. Backoff is bounded
+by the context. A response that the server refuses, rather than a connection
+that failed, is not retried.
 
-`internal/e2e` runs behind the `e2e` build tag against a server the tests own:
-`herdr --session <name> server` on a temporary `XDG_CONFIG_HOME`, torn down
-with `server.stop`. It never touches the caller's session.
+Two behaviours were settled by experiment rather than by reading the schema.
+Focus is exclusive across the session and herdr emits the whole chain, so
+focusing a workspace also produces `tab.focused` and `pane.focused`; the
+mirror can treat focus as a single flag without lagging. And `released` on
+`pane.agent_detected` means the agent handed the pane back to the shell, which
+`src/events.rs` calls `AppEvent::HookAgentReleased`, so the mirror drops the
+agent and keeps its final status.
 
-Its purpose is to prove `schema/method-results.json`. Every method the harness
-can reach is called and its response decoded through the generated wrapper, so
-a wrong result type fails as a decode or assertion error. The suite reports
-which of the 102 methods it covered and why each remaining one is out of reach,
-for example the graphics and popup methods that need an attached client.
+## Package `plugin`
+
+```go
+func Load() (*Env, error)
+func LoadFrom(lookup func(string) (string, bool)) (*Env, error)
+func (e *Env) Kind() EntryKind
+func (e *Env) Client(opts ...herdr.Option) *herdr.Client
+func (e *Env) Context() (*herdr.PluginInvocationContext, error)
+func (e *Env) EventEnvelope() (*herdr.EventEnvelope, error)
+
+type Handlers struct {
+    Startup func(context.Context, *Env) error
+    Action  func(context.Context, *Env, string) error
+    Event   func(context.Context, *Env, *herdr.EventEnvelope) error
+    Pane    func(context.Context, *Env, string) error
+}
+func Run(ctx context.Context, h Handlers) int
+```
+
+`Env` is the environment Herdr injects into a plugin command. `Kind` reports
+which manifest entrypoint started the process: a startup hook sets
+`HERDR_PLUGIN_EVENT` to the literal `startup`, an event hook sets it to a
+dotted event name, an action sets `HERDR_PLUGIN_ACTION_ID`, and a pane command
+sets `HERDR_PLUGIN_ENTRYPOINT_ID`.
+
+`Run` dispatches by kind and returns a process exit code: `ExitOK` when the
+handler returned nil, `ExitHandlerError` when it returned an error, and
+`ExitRuntimeError` when no handler ran at all. Herdr records the exit status
+in its plugin command log, so those two failures are worth telling apart. A
+missing handler for the invoked kind is a configuration error rather than a
+silent success. Errors are written to stderr, which Herdr captures in the same
+log.
+
+## Package `plugin/manifest`
+
+`Parse`, `Decode` and `Validate` mirror what herdr does with
+`herdr-plugin.toml`, down to the error codes, the 120-character id limit and
+the rule that trims surrounding whitespace before judging a value. Warnings
+come back separately from errors, as they do in herdr: an unknown event name
+is a warning, a duplicate action id is an error.
+
+The event names a hook may reference are the 22 in `PLUGIN_HOOK_EVENT_KINDS`,
+not all 26 `EventKind` values. Herdr excludes `workspace.metadata_updated`,
+`pane.updated`, `pane.output_changed` and `layout.updated` and never fires a
+hook for them, so naming one is a warning here too.
+
+`github.com/BurntSushi/toml` is the module's only third-party dependency, and
+only this package uses it.
+
+## Error codes
+
+`errors.go` names the 35 codes seen so far: those read out of `encode_error`
+callers in the herdr sources, and 13 more that `internal/e2e` met while
+exercising the methods that report them. `IsCode` matches through wrapping,
+and comparing `Code` against a plain string keeps working for a code a newer
+server adds.
+
+## Testing
+
+Unit tests cover the transport against a fake server that behaves exactly as
+herdr does, the generator's rules and its output, the mirror's bootstrap
+ordering and reconnection, the plugin environment and dispatch, and manifest
+validation with a fixture per rule. Decoding is also checked against responses
+captured from a real server, sanitised, under `testdata`.
+
+`internal/e2e` runs behind the `e2e` build tag against a server it starts
+itself: `herdr --session <name> server` under a temporary `XDG_CONFIG_HOME`,
+stopped in cleanup. It never touches the caller's session. Its purpose is to
+prove `schema/method-results.json`, which the schema does not state and which
+was derived by reading herdr's handlers: every reachable method is called
+through its generated wrapper and its result type asserted, so a wrong mapping
+fails as a decode or assertion error. It currently exercises 82 of the 102
+methods with no disagreements, and the coverage list is checked against the
+schema so a method can neither disappear nor go unexplained unnoticed.
+
+`just check` runs build, tests, lint and the generated-code check. `just e2e`
+runs the suite above. `just herdr-check` reports drift from the snapshot.
 
 ## Known gaps
 
@@ -417,11 +389,26 @@ accepts is generated. The method is absent from the schema because its framing
 is not newline-delimited JSON: after the server acknowledges the request, the
 client sends one JSON header followed by exactly `data_length` raw bytes per
 frame. Supporting it means a hand-written streaming type next to the
-transport, not a generated wrapper, and it is a phase 3 candidate along with
-the `pane.graphics.*` helpers that would make it usable.
+transport, not a generated wrapper. See "Not built yet".
 
 Rerun that comparison after a schema refresh: a method that appears in the
 error list but not in the snapshot is a method this module cannot reach.
+
+## Where the server is narrower than the schema
+
+The schema states what a request may contain, not what the server accepts, so
+two methods take arguments the schema permits and herdr 0.9.0 refuses.
+`internal/e2e` found both.
+
+`events.wait` accepts every `EventMatch` variant in the schema, but 0.9.0
+matches only pane agent status; any other variant returns
+`unsupported_event_wait_match`. Wait on other events with `events.subscribe`
+instead.
+
+`worktree.create` without a `path` puts the checkout under the calling user's
+home, at `~/.herdr/worktrees/<repo>/<branch>`, not relative to `cwd`. Pass an
+explicit `path` when the location matters, which is what the e2e suite does so
+that it stays inside its temporary directory.
 
 ## Following a new herdr release
 
@@ -466,62 +453,27 @@ The last column is why `schema/README.md` records the version a snapshot was
 taken from: an upgrade means re-reading those files at the new tag, not
 guessing from behaviour.
 
-## Where the server is narrower than the schema
+## Not built yet
 
-The schema states what a request may contain, not what the server accepts, so
-two methods take arguments the schema permits and herdr 0.9.0 refuses.
-`internal/e2e` found both.
+**Graphics streaming.** `pane.graphics.stream` is the only method the server
+accepts that no wrapper reaches. After the acknowledgement the client sends
+one JSON header and then exactly `data_length` raw bytes per frame on a
+connection that stays open, so it needs a hand-written type beside the
+transport rather than a generated wrapper. `pane_graphics_frame_ack` is the
+one result variant no method in `method-results.json` returns, which fits.
 
-`events.wait` accepts every `EventMatch` variant in the schema, but 0.9.0
-matches only pane agent status; any other variant returns
-`unsupported_event_wait_match`. Wait on other events with `events.subscribe`
-instead.
+**A shutdown signal for `Run`.** A pane entrypoint runs until the user closes
+it, and `Run` passes the caller's context straight through, so a plugin has to
+arrange its own signal handling. An option that cancels on SIGINT and SIGTERM
+belongs next to it.
 
-`worktree.create` without a `path` puts the checkout under the calling user's
-home, at `~/.herdr/worktrees/<repo>/<branch>`, not relative to `cwd`. Pass an
-explicit `path` when the location matters, which is what the e2e suite does so
-that it stays inside its temporary directory.
+**The last 20 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
+need a real agent process in the pane; a machine with a supported agent CLI
+could cover them and one without would skip. The eight plugin methods are
+reachable under the suite's temporary config home, which was measured rather
+than assumed: linking a fixture there writes the registry inside that
+directory and leaves the caller's own untouched. The rest need an attached
+client, a client shell endpoint, or state a fresh server does not have.
 
-## Phase 3
-
-Phase 2 left three things undone, each backed by something the work turned up
-rather than by speculation.
-
-| Track | Files | Branch |
-| --- | --- | --- |
-| Graphics streaming | `graphics.go` and its tests in the root package | `feat/graphics` |
-| Plugin ergonomics | `plugin/`, `examples/` | `feat/plugin-ergonomics` |
-| Agent lifecycle coverage | `internal/e2e/` | continues on `feat/e2e` |
-
-### Graphics streaming
-
-`pane.graphics.stream` is the only method the server accepts that no generated
-wrapper reaches, because its framing is not newline-delimited JSON. After the
-acknowledgement the client sends one JSON header and then exactly
-`data_length` raw bytes per frame, on a connection that stays open. It needs a
-handwritten type beside the transport:
-
-```go
-func (c *Client) PaneGraphicsStream(ctx context.Context, params PaneGraphicsStreamParams) (*GraphicsStream, error)
-func (s *GraphicsStream) SendFrame(ctx context.Context, frame GraphicsFrame) (*PaneGraphicsFrameAckResponse, error)
-func (s *GraphicsStream) Close() error
-```
-
-`pane_graphics_frame_ack` is the one result variant no method in
-`method-results.json` returns, which is consistent with it belonging to this
-method. Confirm that against the server rather than assuming it.
-
-### Plugin ergonomics
-
-Two gaps the worked example exposed. `Run` passes the caller's context
-straight through, so a pane entrypoint that runs until the user closes it has
-no way to shut down cleanly; an option that cancels on SIGINT and SIGTERM
-belongs next to it. And a plugin that watches events wants `Session`, which no
-example demonstrates.
-
-### Agent lifecycle coverage
-
-`agent.start`, `agent.prompt` and `agent.send_keys` are out of reach for the
-current suite because they need a real agent process in the pane. A machine
-with a supported agent CLI can cover them; a machine without one skips. That
-is the last group of methods with no execution behind them.
+**A tagged release.** There is none, so `go get` resolves a pseudo-version of
+the latest commit.

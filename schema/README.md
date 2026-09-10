@@ -11,17 +11,28 @@ generated Go type and method wrapper in this module.
 | `schema_version` | 1 |
 
 `method-results.json` maps each request method to the `ResponseResult`
-variant(s) it returns. The schema does not carry this relation, so the table is
-maintained by hand and verified against the herdr sources for the version above.
-The generator refuses to run when a method in the schema has no entry, or when
-an entry names an unknown method or result type.
+variant it returns. The schema does not carry this relation, so the table is
+maintained by hand: it was read out of the herdr handlers for the version
+above, and `internal/e2e` then confirmed it by calling 82 of the 102 methods
+against a real server and checking the type that came back. The generator
+refuses to run when a method in the schema has no entry, or when an entry
+names an unknown method or result type.
+
+`known-gaps.json` records differences between a running server and this
+snapshot that are understood and accepted, so that `herdrcheck` reports them
+as known and fails only on new drift.
 
 ## Refreshing
 
 ```bash
-just schema-update          # rewrites herdr-api.schema.json from the installed herdr
-just gen                    # regenerates *_gen.go
+just herdr-check            # report what moved before changing anything
+just schema-update          # rewrite herdr-api.schema.json from the installed herdr
+just gen                    # regenerate *_gen.go
+just check                  # build, test, lint, verify the generated code is current
+just e2e                    # confirm the result types against a real server
 ```
 
-After a refresh, update the version table above, add entries for new methods to
-`method-results.json`, and run `just check`.
+After a refresh, update the version table above and add an entry for every new
+method to `method-results.json`. The behaviour the schema does not describe
+has no automatic guard; the upgrade checklist in `docs/design.md` lists each
+such fact and the herdr source file it came from.

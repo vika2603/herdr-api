@@ -26,13 +26,18 @@ command that builds and runs `herdr-agent-status.exe`.
 Linking registers the plugin for your user account and enables it in every
 Herdr session, so run it yourself rather than letting a tool do it:
 
+`herdr plugin link` registers a directory but does not run its `[[build]]`
+command; only `herdr plugin install` does, and that clones from GitHub. Build
+the binary first, then link:
+
 ```bash
-herdr plugin link path/to/herdr-client/examples/agent-status
+cd path/to/herdr-client/examples/agent-status
+go build -o herdr-agent-status .
+herdr plugin link .
 herdr plugin list
 ```
 
-Linking runs the `[[build]]` command, which produces `herdr-agent-status` in
-this directory. To remove the plugin again:
+To remove the plugin again:
 
 ```bash
 herdr plugin unlink example.agent-status

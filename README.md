@@ -1,4 +1,4 @@
-# herdr-client
+# Herdr Client
 
 Go client for [Herdr](https://herdr.dev): the full socket API, a live mirror
 of the session, and the pieces a Herdr plugin written in Go needs.
@@ -190,22 +190,29 @@ action id is an error.
 
 ## Layout
 
-| Path | Contents |
-| --- | --- |
-| `.` (package `herdr`) | Transport, plus the generated types, results, events and method wrappers |
-| `plugin` | The environment Herdr injects into plugin commands, and `Run` |
-| `plugin/manifest` | `herdr-plugin.toml` parsing and validation |
-| `cmd/herdr-apigen`, `internal/gen` | The generator that produces `*_gen.go` |
-| `schema` | The schema snapshot and the method-to-result table |
-| `docs/design.md` | Protocol facts, generation rules and the development plan |
+| Path                               | Contents                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `.` (package `herdr`)              | Transport, plus the generated types, results, events and method wrappers |
+| `plugin`                           | The environment Herdr injects into plugin commands, and `Run`            |
+| `plugin/manifest`                  | `herdr-plugin.toml` parsing and validation                               |
+| `cmd/herdr-apigen`, `internal/gen` | The generator that produces `*_gen.go`                                   |
+| `schema`                           | The schema snapshot and the method-to-result table                       |
+| `docs/design.md`                   | Protocol facts, generation rules and the development plan                |
 
 ## Upgrading to a new herdr
 
 ```bash
+just herdr-check     # report what moved before changing anything
 just schema-update   # rewrite schema/herdr-api.schema.json from the installed herdr
 just gen             # regenerate *_gen.go
 just check           # build, test, lint, and verify the generated code is current
+just e2e             # confirm the result types against a server the suite starts
 ```
+
+`just herdr-check` compares the installed binary's schema and the running
+server against the snapshot: the protocol number, methods and types that
+differ, and methods the server accepts without declaring them. It exits
+non-zero on anything `schema/known-gaps.json` does not already account for.
 
 `schema/method-results.json` records which result type each method returns,
 which the schema itself does not state. Add an entry for any new method; the
@@ -216,6 +223,11 @@ Generated code ignores fields it does not know, and an unrecognised result or
 event type surfaces as an error rather than a panic, so a newer server does
 not break a client outright. Compare the `Protocol` in a `Ping` response with
 `herdr.SchemaProtocol` to detect one.
+
+Behaviour the schema does not describe, such as how socket paths resolve or
+what a plugin manifest may contain, was read out of the herdr sources. The
+upgrade checklist in `docs/design.md` lists each of those facts with the file
+it came from, because nothing regenerates them.
 
 ## Status
 
