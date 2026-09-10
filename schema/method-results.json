@@ -1,0 +1,320 @@
+{
+  "_comment": "Result type per request method. The schema does not record which ResponseResult variant a method returns; this table was derived from herdr v0.9.0 handler sources and must be reviewed when the schema snapshot changes. Values: {\"result\": \"<type>\"} exactly one variant; {\"results\": [...]} several variants (\"*\" = any, wrapper returns the Result interface); {\"stream\": \"<ack type>\"} the connection stays open after the acknowledging result and pushes events.",
+  "herdr_version": "0.9.0",
+  "protocol": 22,
+  "methods": {
+    "ping": {
+      "result": "pong"
+    },
+    "server.stop": {
+      "result": "ok"
+    },
+    "server.live_handoff": {
+      "results": [
+        "*"
+      ]
+    },
+    "server.reload_config": {
+      "result": "config_reload"
+    },
+    "server.agent_manifests": {
+      "result": "agent_manifest_status"
+    },
+    "server.reload_agent_manifests": {
+      "result": "agent_manifest_reload"
+    },
+    "notification.show": {
+      "result": "notification_show"
+    },
+    "product_announcement.dismiss": {
+      "result": "ok"
+    },
+    "release_notes.dismiss": {
+      "result": "ok"
+    },
+    "command.invoke": {
+      "results": [
+        "*"
+      ]
+    },
+    "client.window_title.set": {
+      "result": "client_window_title"
+    },
+    "client.window_title.clear": {
+      "result": "client_window_title"
+    },
+    "client_shell.surface.set": {
+      "result": "client_shell_surface_set"
+    },
+    "session.snapshot": {
+      "result": "session_snapshot"
+    },
+    "workspace.create": {
+      "result": "workspace_created"
+    },
+    "workspace.list": {
+      "result": "workspace_list"
+    },
+    "workspace.get": {
+      "result": "workspace_info"
+    },
+    "workspace.focus": {
+      "result": "workspace_info"
+    },
+    "workspace.rename": {
+      "result": "workspace_info"
+    },
+    "workspace.move": {
+      "result": "workspace_list"
+    },
+    "workspace.move_block": {
+      "result": "workspace_list"
+    },
+    "workspace.report_metadata": {
+      "result": "ok"
+    },
+    "workspace.close": {
+      "result": "ok"
+    },
+    "worktree.list": {
+      "result": "worktree_list"
+    },
+    "worktree.create": {
+      "result": "worktree_created"
+    },
+    "worktree.open": {
+      "result": "worktree_opened"
+    },
+    "worktree.remove": {
+      "result": "worktree_removed"
+    },
+    "tab.create": {
+      "result": "tab_created"
+    },
+    "tab.list": {
+      "result": "tab_list"
+    },
+    "tab.get": {
+      "result": "tab_info"
+    },
+    "tab.focus": {
+      "result": "tab_info"
+    },
+    "tab.rename": {
+      "result": "tab_info"
+    },
+    "tab.move": {
+      "result": "tab_list"
+    },
+    "tab.close": {
+      "result": "ok"
+    },
+    "agent.list": {
+      "result": "agent_list"
+    },
+    "agent.get": {
+      "result": "agent_info"
+    },
+    "agent.read": {
+      "result": "pane_read"
+    },
+    "agent.explain": {
+      "result": "agent_explain"
+    },
+    "agent.send_keys": {
+      "result": "ok"
+    },
+    "agent.rename": {
+      "result": "agent_info"
+    },
+    "agent.view.set": {
+      "result": "agent_view"
+    },
+    "agent.view.clear": {
+      "result": "agent_view"
+    },
+    "agent.focus": {
+      "result": "agent_info"
+    },
+    "agent.start": {
+      "result": "agent_started"
+    },
+    "agent.prompt": {
+      "result": "agent_prompted"
+    },
+    "agent.wait": {
+      "result": "agent_info"
+    },
+    "pane.split": {
+      "result": "pane_info"
+    },
+    "pane.swap": {
+      "result": "pane_swap"
+    },
+    "pane.move": {
+      "result": "pane_move"
+    },
+    "pane.zoom": {
+      "result": "pane_zoom"
+    },
+    "pane.layout": {
+      "result": "pane_layout"
+    },
+    "pane.process_info": {
+      "result": "pane_process_info"
+    },
+    "layout.export": {
+      "result": "layout_export"
+    },
+    "layout.apply": {
+      "result": "layout_apply"
+    },
+    "layout.set_split_ratio": {
+      "result": "layout_split_ratio_set"
+    },
+    "pane.neighbor": {
+      "result": "pane_neighbor"
+    },
+    "pane.edges": {
+      "result": "pane_edges"
+    },
+    "pane.focus_direction": {
+      "result": "pane_focus_direction"
+    },
+    "pane.resize": {
+      "result": "pane_resize"
+    },
+    "pane.scroll": {
+      "result": "pane_info"
+    },
+    "pane.edit_scrollback": {
+      "result": "ok"
+    },
+    "pane.selection.read": {
+      "result": "pane_selection"
+    },
+    "pane.copy_motion": {
+      "result": "pane_copy_motion"
+    },
+    "pane.copy_search": {
+      "result": "pane_copy_search"
+    },
+    "pane.list": {
+      "result": "pane_list"
+    },
+    "pane.current": {
+      "result": "pane_current"
+    },
+    "pane.get": {
+      "result": "pane_info"
+    },
+    "pane.focus": {
+      "result": "pane_info"
+    },
+    "pane.input.set": {
+      "result": "ok"
+    },
+    "pane.link.activate": {
+      "result": "pane_link_activated"
+    },
+    "pane.rename": {
+      "result": "pane_info"
+    },
+    "pane.send_text": {
+      "result": "ok"
+    },
+    "pane.send_keys": {
+      "result": "ok"
+    },
+    "pane.send_input": {
+      "result": "ok"
+    },
+    "pane.read": {
+      "result": "pane_read"
+    },
+    "pane.graphics.set": {
+      "result": "ok"
+    },
+    "pane.graphics.clear": {
+      "result": "ok"
+    },
+    "pane.graphics.info": {
+      "result": "pane_graphics_info"
+    },
+    "pane.report_agent": {
+      "result": "ok"
+    },
+    "pane.report_agent_session": {
+      "result": "ok"
+    },
+    "pane.report_metadata": {
+      "result": "ok"
+    },
+    "pane.clear_agent_authority": {
+      "result": "ok"
+    },
+    "pane.release_agent": {
+      "result": "ok"
+    },
+    "pane.close": {
+      "result": "ok"
+    },
+    "popup.close": {
+      "result": "ok"
+    },
+    "events.subscribe": {
+      "stream": "subscription_started"
+    },
+    "events.wait": {
+      "result": "wait_matched"
+    },
+    "pane.wait_for_output": {
+      "result": "output_matched"
+    },
+    "integration.list": {
+      "result": "integration_list"
+    },
+    "integration.install": {
+      "result": "integration_install"
+    },
+    "integration.uninstall": {
+      "result": "integration_uninstall"
+    },
+    "plugin.link": {
+      "result": "plugin_linked"
+    },
+    "plugin.list": {
+      "result": "plugin_list"
+    },
+    "plugin.unlink": {
+      "result": "plugin_unlinked"
+    },
+    "plugin.enable": {
+      "result": "plugin_enabled"
+    },
+    "plugin.disable": {
+      "result": "plugin_disabled"
+    },
+    "plugin.action.list": {
+      "result": "plugin_action_list"
+    },
+    "plugin.action.invoke": {
+      "result": "plugin_action_invoked"
+    },
+    "plugin.log.list": {
+      "result": "plugin_log_list"
+    },
+    "plugin.pane.open": {
+      "results": [
+        "plugin_pane_opened",
+        "ok"
+      ]
+    },
+    "plugin.pane.focus": {
+      "result": "plugin_pane_focused"
+    },
+    "plugin.pane.close": {
+      "result": "plugin_pane_closed"
+    }
+  }
+}
