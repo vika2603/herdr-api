@@ -168,7 +168,7 @@ func TestDecodeCapturedResults(t *testing.T) {
 					t.Fatalf("decoded %d actions, want 1", len(list.Actions))
 				}
 				action := list.Actions[0]
-				if action.ActionID != "open" || action.PluginID != "ssh-connector" {
+				if action.ActionID != "open" || action.PluginID != "example-tools" {
 					t.Errorf("action = %+v", action)
 				}
 				if len(action.Contexts) != 1 || action.Contexts[0] != PluginActionContextGlobal {
