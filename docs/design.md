@@ -323,3 +323,84 @@ string comparison remains possible:
   `method-results.json`, regenerate, and run `just check`.
 - At runtime, compare the `protocol` returned by `Ping` with `SchemaProtocol`
   to detect a server newer than the generated code.
+
+## Phase 2
+
+Phase 1 delivered the transport, the generated API surface and the plugin
+manifest. Phase 2 makes the module usable for writing a real plugin and proves
+the generated surface against a running server. The three tracks own disjoint
+files and can be developed in parallel.
+
+| Track | Files | Branch |
+| --- | --- | --- |
+| Plugin runtime | `plugin/` (except `plugin/manifest/`), `examples/` | `feat/plugin-runtime` |
+| Session mirror | `session.go`, `subscribe.go` and their tests in the root package | `feat/session` |
+| End-to-end verification | `internal/e2e/` | `feat/e2e` |
+
+### Plugin runtime
+
+`plugin.Env` gains typed accessors over the raw JSON it already carries, and a
+dispatcher so a single binary can serve every entrypoint a manifest declares:
+
+```go
+func (e *Env) Context() (*herdr.PluginInvocationContext, error)
+func (e *Env) EventEnvelope() (*herdr.EventEnvelope, error)   // event hooks only
+
+type Handlers struct {
+    Startup func(context.Context, *Env) error
+    Action  func(context.Context, *Env, string) error          // action id
+    Event   func(context.Context, *Env, *herdr.EventEnvelope) error
+    Pane    func(context.Context, *Env, string) error          // entrypoint id
+}
+func Run(ctx context.Context, h Handlers) int
+```
+
+`Run` loads the environment, selects the handler by `Env.Kind()`, and returns a
+process exit code. A missing handler for the invoked kind is an error, not a
+silent success, because Herdr records the exit status in its command log. A
+handler's `error` is written to stderr, which Herdr captures in that same log.
+
+`examples/` holds one worked plugin exercising a startup hook, an action and an
+event hook through `Run`, with a manifest that
+`plugin/manifest` validates in a test.
+
+### Session mirror
+
+Two additions to the root package, both built on `OpenStream`:
+
+```go
+func (c *Client) Subscribe(ctx context.Context, subs ...Subscription) (*EventStream, error)
+func (s *EventStream) Next(ctx context.Context) (Event, error)
+
+type Session struct{ /* private */ }
+func OpenSession(ctx context.Context, c *Client, subs ...Subscription) (*Session, error)
+func (s *Session) Workspaces() []WorkspaceInfo
+func (s *Session) Pane(paneID string) (PaneInfo, bool)
+func (s *Session) Agents() []AgentInfo
+func (s *Session) Layout(tabID string) (PaneLayoutSnapshot, bool)
+func (s *Session) Next(ctx context.Context) (Event, error)
+func (s *Session) Close() error
+```
+
+`OpenSession` implements the bootstrap the socket API documents: subscribe
+first, buffer what arrives, call `session.snapshot`, install it, then apply the
+buffered events in order and keep streaming. Each event updates the cache
+before `Next` returns it, so a caller that reads the cache after `Next` sees
+the state that event produced. `Session` is safe for concurrent readers.
+
+A server restart, which happens on live handoff, ends the stream. `Session`
+reconnects and re-bootstraps rather than reporting the stream as finished, and
+surfaces the gap as one synthetic resync event so callers can discard derived
+state. Reconnection backs off and stops when its context is done.
+
+### End-to-end verification
+
+`internal/e2e` runs behind the `e2e` build tag against a server the tests own:
+`herdr --session <name> server` on a temporary `XDG_CONFIG_HOME`, torn down
+with `server.stop`. It never touches the caller's session.
+
+Its purpose is to prove `schema/method-results.json`. Every method the harness
+can reach is called and its response decoded through the generated wrapper, so
+a wrong result type fails as a decode or assertion error. The suite reports
+which of the 102 methods it covered and why each remaining one is out of reach,
+for example the graphics and popup methods that need an attached client.
