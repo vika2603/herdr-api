@@ -52,14 +52,6 @@ func NewFromEnv(opts ...Option) (*Client, error) {
 	return New(path, opts...), nil
 }
 
-// ResolveSocketPath returns the socket path for a named session, or, when
-// session is empty, the path selected by HERDR_SOCKET_PATH, HERDR_SESSION and
-// finally the default session.
-func ResolveSocketPath(session string) (string, error) {
-	_ = session
-	return "", errNotImplemented
-}
-
 // SocketPath returns the path the Client dials.
 func (c *Client) SocketPath() string { return c.socketPath }
 
@@ -109,23 +101,3 @@ func (s *Stream) Close() error { return nil }
 var ErrStreamClosed = errors.New("herdr: stream closed")
 
 var errNotImplemented = errors.New("herdr: not implemented")
-
-// Error is an error response from the server.
-type Error struct {
-	Method  string
-	Code    string
-	Message string
-}
-
-func (e *Error) Error() string {
-	if e.Method == "" {
-		return e.Code + ": " + e.Message
-	}
-	return e.Method + ": " + e.Code + ": " + e.Message
-}
-
-// IsCode reports whether err is a server *Error carrying code.
-func IsCode(err error, code string) bool {
-	var apiErr *Error
-	return errors.As(err, &apiErr) && apiErr.Code == code
-}

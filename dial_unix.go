@@ -1,0 +1,26 @@
+//go:build !windows
+
+package herdr
+
+import (
+	"context"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"time"
+)
+
+// dialSocket connects to the Unix domain socket at path.
+func dialSocket(ctx context.Context, path string, timeout time.Duration) (io.ReadWriteCloser, error) {
+	dialer := net.Dialer{Timeout: timeout}
+	return dialer.DialContext(ctx, "unix", path)
+}
+
+// platformConfigDir mirrors herdr's config directory for non-Windows targets.
+func platformConfigDir() string {
+	if home := os.Getenv("HOME"); home != "" {
+		return filepath.Join(home, ".config", appDirName)
+	}
+	return filepath.Join(os.TempDir(), appDirName)
+}
