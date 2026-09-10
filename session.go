@@ -14,7 +14,8 @@ import (
 // handoff. The events of the gap are not recoverable, so state a caller
 // derived from earlier events has to be discarded.
 type ResyncEvent struct {
-	// Cause is the error that ended the previous stream.
+	// Cause is the error that ended the previous stream. It is never nil: a
+	// stream that ended without one is reported as ErrStreamClosed.
 	Cause error
 }
 
@@ -177,6 +178,48 @@ func (s *Session) Layout(tabID string) (PaneLayoutSnapshot, bool) {
 		return PaneLayoutSnapshot{}, false
 	}
 	return cloneLayout(layout), true
+}
+
+// Snapshot returns the whole mirror as one SessionSnapshot, read under a
+// single lock so that every part of it describes the same moment. The
+// accessors above each take the lock separately, so a caller that needs one
+// consistent frame, or that needs the panes and layouts the accessors do not
+// list, should read it here.
+//
+// Version and Protocol are those of the snapshot the mirror was built from; a
+// resync replaces them, since it may reach an upgraded server. The focused
+// ids are read back from the Focused flag the mirror maintains, and are unset
+// when nothing holds focus.
+func (s *Session) Snapshot() SessionSnapshot {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	workspaces := cloneEach(s.cache.workspaces.values(), cloneWorkspace)
+	tabs := s.cache.tabs.values()
+	panes := cloneEach(s.cache.panes.values(), clonePane)
+	return SessionSnapshot{
+		Version:            s.cache.version,
+		Protocol:           s.cache.protocol,
+		Workspaces:         workspaces,
+		Tabs:               tabs,
+		Panes:              panes,
+		Agents:             cloneEach(s.cache.agents.values(), cloneAgent),
+		Layouts:            cloneEach(s.cache.layouts.values(), cloneLayout),
+		FocusedWorkspaceID: focusedID(workspaces, func(w WorkspaceInfo) (string, bool) { return w.WorkspaceID, w.Focused }),
+		FocusedTabID:       focusedID(tabs, func(t TabInfo) (string, bool) { return t.TabID, t.Focused }),
+		FocusedPaneID:      focusedID(panes, func(p PaneInfo) (string, bool) { return p.PaneID, p.Focused }),
+	}
+}
+
+// focusedID returns the id of the one focused value, which the server keeps
+// exclusive across the session.
+func focusedID[T any](values []T, read func(T) (string, bool)) *string {
+	for _, value := range values {
+		if id, focused := read(value); focused {
+			return &id
+		}
+	}
+	return nil
 }
 
 // Next returns the next event, having applied it to the mirror.
@@ -444,6 +487,11 @@ type sessionCache struct {
 	panes      orderedCollection[PaneInfo]
 	agents     orderedCollection[AgentInfo]
 	layouts    orderedCollection[PaneLayoutSnapshot]
+	// version and protocol come from the snapshot the mirror was built from.
+	// No event carries them, so they change only when a resync rebuilds the
+	// cache against a server that may have been upgraded.
+	version  string
+	protocol uint32
 }
 
 func workspaceKey(w WorkspaceInfo) string   { return w.WorkspaceID }
@@ -453,7 +501,7 @@ func agentKey(a AgentInfo) string           { return a.PaneID }
 func layoutKey(l PaneLayoutSnapshot) string { return l.TabID }
 
 func newSessionCache(snapshot SessionSnapshot) *sessionCache {
-	cache := &sessionCache{}
+	cache := &sessionCache{version: snapshot.Version, protocol: snapshot.Protocol}
 	cache.workspaces.reset(snapshot.Workspaces, workspaceKey)
 	cache.tabs.reset(snapshot.Tabs, tabKey)
 	cache.panes.reset(snapshot.Panes, paneKey)

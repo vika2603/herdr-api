@@ -719,3 +719,49 @@ func TestOpenSessionKeepsEveryBufferedEvent(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionSnapshotReturnsTheWholeMirror(t *testing.T) {
+	server := newMirrorServer(t, testSnapshot())
+	session := openTestSession(t, server, PaneCreatedSubscription{})
+	server.acceptStream()
+
+	got := session.Snapshot()
+
+	if got.Version != "0.9.0" || got.Protocol != SchemaProtocol {
+		t.Errorf("Version = %q, Protocol = %d", got.Version, got.Protocol)
+	}
+	if len(got.Workspaces) != 2 || len(got.Tabs) != 3 || len(got.Panes) != 3 ||
+		len(got.Agents) != 1 || len(got.Layouts) != 3 {
+		t.Fatalf("counts: workspaces %d tabs %d panes %d agents %d layouts %d",
+			len(got.Workspaces), len(got.Tabs), len(got.Panes), len(got.Agents), len(got.Layouts))
+	}
+	if Value(got.FocusedWorkspaceID) != "w1" || Value(got.FocusedTabID) != "w1:t1" || Value(got.FocusedPaneID) != "w1:p1" {
+		t.Errorf("focused: workspace %q tab %q pane %q",
+			Value(got.FocusedWorkspaceID), Value(got.FocusedTabID), Value(got.FocusedPaneID))
+	}
+
+	got.Workspaces[0].Label = "rewritten"
+	got.Panes[0].Tokens["pane"] = "rewritten"
+	again := session.Snapshot()
+	if again.Workspaces[0].Label != "one" || again.Panes[0].Tokens["pane"] != "w1:p1" {
+		t.Error("Snapshot shares state with the mirror")
+	}
+}
+
+// Focus is exclusive, so a snapshot taken after it moves reports the new
+// holder, and reports none once the focused pane is gone.
+func TestSessionSnapshotTracksFocus(t *testing.T) {
+	server := newMirrorServer(t, testSnapshot())
+	session := openTestSession(t, server)
+	stream := server.acceptStream()
+
+	applyEvent(t, session, stream, string(EventKindPaneFocused), PaneFocusedEvent{PaneID: "w1:p2", WorkspaceID: "w1"})
+	if got := Value(session.Snapshot().FocusedPaneID); got != "w1:p2" {
+		t.Errorf("FocusedPaneID = %q, want w1:p2", got)
+	}
+
+	applyEvent(t, session, stream, string(EventKindPaneClosed), PaneClosedEvent{PaneID: "w1:p2", WorkspaceID: "w1"})
+	if got := session.Snapshot().FocusedPaneID; got != nil {
+		t.Errorf("FocusedPaneID = %q, want none", *got)
+	}
+}

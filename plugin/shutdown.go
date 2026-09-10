@@ -15,9 +15,13 @@ import (
 //
 //	func main() {
 //		ctx, stop := plugin.ShutdownContext(context.Background())
-//		defer stop()
-//		os.Exit(plugin.Run(ctx, handlers))
+//		code := plugin.Run(ctx, handlers)
+//		stop()
+//		os.Exit(code)
 //	}
+//
+// stop is called before os.Exit rather than deferred, because os.Exit skips
+// deferred calls; linters that check for that flag the deferred form.
 //
 // The signals are the ones herdr 0.9.0 actually sends. Closing a pane
 // delivers SIGHUP and then SIGTERM to the process in it, which was measured
@@ -25,7 +29,7 @@ import (
 // terminal sends it when the user interrupts, not because Herdr does.
 //
 // Calling the returned stop function releases the signal handlers and
-// restores the default behaviour, so defer it.
+// restores the default behaviour.
 func ShutdownContext(parent context.Context) (context.Context, context.CancelFunc) {
 	return signal.NotifyContext(parent, shutdownSignals...)
 }

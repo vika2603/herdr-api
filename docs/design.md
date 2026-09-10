@@ -305,6 +305,7 @@ func (s *Session) Tabs() []TabInfo
 func (s *Session) Pane(paneID string) (PaneInfo, bool)
 func (s *Session) Agents() []AgentInfo
 func (s *Session) Layout(tabID string) (PaneLayoutSnapshot, bool)
+func (s *Session) Snapshot() SessionSnapshot
 func (s *Session) Next(ctx context.Context) (Event, error)
 func (s *Session) Close() error
 ```
@@ -320,6 +321,14 @@ adjusting it.
 The cache advances only as `Next` delivers, so reading an accessor after
 `Next` shows the state that event produced. Accessors copy what they return
 and the mirror is safe for concurrent readers.
+
+Each accessor takes the lock on its own, which is enough while the mirror is
+only advanced by `Next`, but leaves no way to read one consistent frame under
+one lock, and no way to list panes or layouts at all. `Snapshot` closes both:
+it returns the same `SessionSnapshot` the bootstrap consumed, with the focused
+ids read back from the `Focused` flags and the version and protocol carried
+from the snapshot the mirror was built on. Writing `examples/agent-board` is
+what showed the gap; the board needs a whole frame, not a field at a time.
 
 A server restart, which is what live handoff does, ends the stream.`Session`
 reconnects, bootstraps again, and reports the gap as one `*ResyncEvent` so a
