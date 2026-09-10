@@ -3,38 +3,34 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/vika2603/herdr-client"
 	"github.com/vika2603/herdr-client/plugin"
+	"github.com/vika2603/herdr-client/plugin/plugintest"
 )
 
-func statusEvent(paneID, workspaceID string, status herdr.AgentStatus) *herdr.EventEnvelope {
-	agent := "claude"
-	return &herdr.EventEnvelope{
-		Event: herdr.EventKindPaneAgentStatusChanged,
-		Data: &herdr.PaneAgentStatusChangedEvent{
-			PaneID:       paneID,
-			WorkspaceID:  workspaceID,
-			DisplayAgent: &agent,
-			AgentStatus:  status,
-		},
+func statusChange(paneID, workspaceID string, status herdr.AgentStatus) *herdr.PaneAgentStatusChangedEvent {
+	return &herdr.PaneAgentStatusChangedEvent{
+		PaneID:       paneID,
+		WorkspaceID:  workspaceID,
+		DisplayAgent: herdr.Ptr("claude"),
+		AgentStatus:  status,
 	}
 }
 
 func TestStartupAndEventHooks(t *testing.T) {
-	env := &plugin.Env{StateDir: filepath.Join(t.TempDir(), "state")}
+	env := plugintest.Env(plugintest.StateDir(t.TempDir()))
 	ctx := context.Background()
 
 	if err := onStartup(ctx, env); err != nil {
 		t.Fatalf("onStartup() error = %v", err)
 	}
-	if err := onEvent(ctx, env, statusEvent("pane-1", "ws-1", herdr.AgentStatusWorking)); err != nil {
-		t.Fatalf("onEvent() error = %v", err)
+	if err := onStatusChanged(ctx, env, statusChange("pane-1", "ws-1", herdr.AgentStatusWorking)); err != nil {
+		t.Fatalf("onStatusChanged() error = %v", err)
 	}
-	if err := onEvent(ctx, env, statusEvent("pane-2", "ws-2", herdr.AgentStatusBlocked)); err != nil {
-		t.Fatalf("onEvent() error = %v", err)
+	if err := onStatusChanged(ctx, env, statusChange("pane-2", "ws-2", herdr.AgentStatusBlocked)); err != nil {
+		t.Fatalf("onStatusChanged() error = %v", err)
 	}
 
 	records, err := readRecords(env)
@@ -60,96 +56,65 @@ func TestStartupAndEventHooks(t *testing.T) {
 	}
 }
 
-func TestEventHookRejectsAnotherEvent(t *testing.T) {
-	env := &plugin.Env{StateDir: t.TempDir()}
-	envelope := &herdr.EventEnvelope{
-		Event: herdr.EventKindPaneCreated,
-		Data:  &herdr.PaneCreatedEvent{Pane: herdr.PaneInfo{PaneID: "pane-1"}},
-	}
-
-	if err := onEvent(context.Background(), env, envelope); err == nil {
-		t.Fatal("onEvent() error = nil, want an error naming the event")
-	}
-}
-
 func TestHooksNeedAStateDirectory(t *testing.T) {
-	env := &plugin.Env{}
+	env := plugintest.Env()
+	ctx := context.Background()
 
-	if err := onStartup(context.Background(), env); err == nil {
+	if err := onStartup(ctx, env); err == nil {
 		t.Error("onStartup() error = nil, want one")
 	}
-	if err := onEvent(context.Background(), env, statusEvent("pane-1", "ws-1", herdr.AgentStatusIdle)); err == nil {
-		t.Error("onEvent() error = nil, want one")
+	if err := onStatusChanged(ctx, env, statusChange("pane-1", "ws-1", herdr.AgentStatusIdle)); err == nil {
+		t.Error("onStatusChanged() error = nil, want one")
 	}
-	if err := onAction(context.Background(), env, actionShow); err == nil {
-		t.Error("onAction() error = nil, want one")
-	}
-}
-
-func TestActionRejectsAnUnknownID(t *testing.T) {
-	env := &plugin.Env{StateDir: t.TempDir()}
-
-	if err := onAction(context.Background(), env, "hide"); err == nil {
-		t.Fatal("onAction() error = nil, want an error naming the action")
+	if err := onShow(ctx, env); err == nil {
+		t.Error("onShow() error = nil, want one")
 	}
 }
 
 func TestActionFiltersByInvokingWorkspace(t *testing.T) {
-	env := &plugin.Env{
-		StateDir:    t.TempDir(),
-		ContextJSON: []byte(`{"workspace_id":"ws-2"}`),
-	}
+	env := plugintest.Env(
+		plugintest.Action(actionShow),
+		plugintest.Workspace("ws-2"),
+		plugintest.StateDir(t.TempDir()),
+	)
 	ctx := context.Background()
-	for _, event := range []*herdr.EventEnvelope{
-		statusEvent("pane-1", "ws-1", herdr.AgentStatusWorking),
-		statusEvent("pane-2", "ws-2", herdr.AgentStatusDone),
+	for _, change := range []*herdr.PaneAgentStatusChangedEvent{
+		statusChange("pane-1", "ws-1", herdr.AgentStatusWorking),
+		statusChange("pane-2", "ws-2", herdr.AgentStatusDone),
 	} {
-		if err := onEvent(ctx, env, event); err != nil {
-			t.Fatalf("onEvent() error = %v", err)
+		if err := onStatusChanged(ctx, env, change); err != nil {
+			t.Fatalf("onStatusChanged() error = %v", err)
 		}
 	}
 
-	workspace, err := invokingWorkspace(env)
-	if err != nil {
-		t.Fatalf("invokingWorkspace() error = %v", err)
+	if got := env.Invocation().WorkspaceID; got != "ws-2" {
+		t.Errorf("WorkspaceID = %q, want %q", got, "ws-2")
 	}
-	if workspace != "ws-2" {
-		t.Errorf("invokingWorkspace() = %q, want %q", workspace, "ws-2")
-	}
-	if err := onAction(ctx, env, actionShow); err != nil {
-		t.Errorf("onAction() error = %v", err)
+	if err := onShow(ctx, env); err != nil {
+		t.Errorf("onShow() error = %v", err)
 	}
 }
 
-func TestInvokingWorkspaceWithoutAContext(t *testing.T) {
-	tests := []struct {
-		name string
-		env  plugin.Env
-		want string
-	}{
-		{name: "no context variable", env: plugin.Env{}},
-		{name: "context without a workspace", env: plugin.Env{ContextJSON: []byte(`{}`)}},
-		{name: "context with a workspace", env: plugin.Env{ContextJSON: []byte(`{"workspace_id":"ws-1"}`)}, want: "ws-1"},
+// Invoked outside a workspace, the action prints every record.
+func TestActionWithoutAWorkspace(t *testing.T) {
+	env := plugintest.Env(plugintest.Action(actionShow), plugintest.StateDir(t.TempDir()))
+	ctx := context.Background()
+	if err := onStatusChanged(ctx, env, statusChange("pane-1", "ws-1", herdr.AgentStatusWorking)); err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := invokingWorkspace(&tt.env)
-			if err != nil {
-				t.Fatalf("invokingWorkspace() error = %v", err)
-			}
-			if got != tt.want {
-				t.Errorf("invokingWorkspace() = %q, want %q", got, tt.want)
-			}
-		})
+	if got := env.Invocation().WorkspaceID; got != "" {
+		t.Errorf("WorkspaceID = %q, want the empty string", got)
+	}
+	if err := onShow(ctx, env); err != nil {
+		t.Errorf("onShow() error = %v", err)
 	}
 }
 
 func TestReadRecordsSkipsBrokenLines(t *testing.T) {
-	env := &plugin.Env{StateDir: t.TempDir()}
-	path := filepath.Join(env.StateDir, logName)
+	env := plugintest.Env(plugintest.StateDir(t.TempDir()))
 	content := "{\"pane_id\":\"pane-1\",\"status\":\"idle\"}\nnot json\n\n{\"pane_id\":\"pane-2\",\"status\":\"done\"}\n"
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(env.StatePath(logName), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -159,5 +124,34 @@ func TestReadRecordsSkipsBrokenLines(t *testing.T) {
 	}
 	if len(records) != 2 || records[0].PaneID != "pane-1" || records[1].PaneID != "pane-2" {
 		t.Errorf("records = %+v", records)
+	}
+}
+
+// The registry dispatches an event hook by the name Herdr passes and hands
+// the handler the decoded payload, which is what lets main serve three
+// entrypoints from one binary.
+func TestEventHookReachesTheHandler(t *testing.T) {
+	env := plugintest.Env(
+		plugintest.EventHook(statusChange("pane-1", "ws-1", herdr.AgentStatusDone)),
+		plugintest.StateDir(t.TempDir()),
+	)
+	if env.Kind() != plugin.KindEvent || env.Event != "pane.agent_status_changed" {
+		t.Fatalf("kind = %q, event = %q", env.Kind(), env.Event)
+	}
+
+	envelope, err := env.EventEnvelope()
+	if err != nil {
+		t.Fatalf("EventEnvelope() error = %v", err)
+	}
+	changed, ok := envelope.Data.(*herdr.PaneAgentStatusChangedEvent)
+	if !ok {
+		t.Fatalf("payload = %T", envelope.Data)
+	}
+	if err := onStatusChanged(context.Background(), env, changed); err != nil {
+		t.Fatalf("onStatusChanged() error = %v", err)
+	}
+	records, err := readRecords(env)
+	if err != nil || len(records) != 1 || records[0].Status != "done" {
+		t.Errorf("records = %+v, %v", records, err)
 	}
 }
