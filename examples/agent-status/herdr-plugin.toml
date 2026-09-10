@@ -1,0 +1,31 @@
+# Example plugin: one binary serving a startup hook, an event hook and an
+# action. See README.md.
+
+id = "example.agent-status"
+name = "Agent Status Log"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Records agent status changes and prints them on demand"
+# Windows is left out to keep the example short: it would need a second entry
+# per command building and running herdr-agent-status.exe.
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["go", "build", "-o", "herdr-agent-status", "."]
+
+# Empties the log so it only describes the running session.
+[[startup]]
+command = ["./herdr-agent-status"]
+
+# Herdr runs one process per event and passes the envelope in
+# HERDR_PLUGIN_EVENT_JSON.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["./herdr-agent-status"]
+
+[[actions]]
+id = "show"
+title = "Show agent status log"
+description = "Print the agent status changes recorded in this session"
+contexts = ["global", "workspace"]
+command = ["./herdr-agent-status"]
