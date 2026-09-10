@@ -240,3 +240,24 @@ func TestAppendStateJSONLKeepsConcurrentLinesWhole(t *testing.T) {
 		t.Errorf("distinct records = %d, want %d", len(seen), writers)
 	}
 }
+
+func TestWriteStateRawBytes(t *testing.T) {
+	env := &Env{StateDir: filepath.Join(t.TempDir(), "state")}
+
+	if err := env.WriteState("log.jsonl", []byte("{}\n")); err != nil {
+		t.Fatalf("WriteState() error = %v", err)
+	}
+	if err := env.AppendStateJSONL("log.jsonl", settings{Theme: "dark"}); err != nil {
+		t.Fatalf("AppendStateJSONL() error = %v", err)
+	}
+
+	// Writing nothing empties the file, which is how a plugin starts a fresh
+	// log for a new session.
+	if err := env.WriteState("log.jsonl", nil); err != nil {
+		t.Fatalf("WriteState() error = %v", err)
+	}
+	data, err := env.ReadState("log.jsonl")
+	if err != nil || len(data) != 0 {
+		t.Errorf("ReadState() = %q, %v, want it emptied", data, err)
+	}
+}

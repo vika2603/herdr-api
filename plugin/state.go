@@ -84,20 +84,16 @@ func (e *Env) ReadStateJSON(name string, into any) error {
 	return nil
 }
 
-// WriteStateJSON writes value as JSON to a file in the state directory,
-// creating the directory when it does not exist.
+// WriteState writes data to a file in the state directory, creating the
+// directory when it does not exist.
 //
 // The write is atomic: the contents go to a temporary file in the same
 // directory and are renamed over the target, so a crash or a full disk leaves
 // either the previous file or the new one, never a truncated mix of the two.
 // Two processes writing the same name concurrently both succeed and the last
-// rename wins, so this suits a document one process owns rather than a log
+// rename wins, so this suits a file one process owns rather than a log
 // several append to; see AppendStateJSONL for that.
-func (e *Env) WriteStateJSON(name string, value any) error {
-	data, err := json.Marshal(value)
-	if err != nil {
-		return fmt.Errorf("plugin: encode state %s: %w", name, err)
-	}
+func (e *Env) WriteState(name string, data []byte) error {
 	path, err := e.statePath(name)
 	if err != nil {
 		return err
@@ -106,6 +102,16 @@ func (e *Env) WriteStateJSON(name string, value any) error {
 		return fmt.Errorf("plugin: create state directory: %w", err)
 	}
 	return writeAtomic(path, data)
+}
+
+// WriteStateJSON writes value as JSON to a file in the state directory, with
+// the guarantees WriteState documents.
+func (e *Env) WriteStateJSON(name string, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("plugin: encode state %s: %w", name, err)
+	}
+	return e.WriteState(name, data)
 }
 
 // AppendStateJSONL appends value to a file in the state directory as one JSON
