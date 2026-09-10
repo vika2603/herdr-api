@@ -105,13 +105,23 @@ type Method struct {
 	ResultTypes []string
 }
 
+// EventRef pairs the name of a dedicated subscription with the Go type of
+// its payload.
+type EventRef struct {
+	Name string
+	Type string
+}
+
 // Package is everything the emitters need to write package herdr.
 type Package struct {
 	Name      string
 	Protocol  uint32
 	Types     []*Type
 	EventKind []EnumValue
-	Methods   []*Method
+	// Subscriptions are the events that arrive under a dotted name and carry
+	// no discriminator of their own.
+	Subscriptions []EventRef
+	Methods       []*Method
 }
 
 // TypesIn returns the types of one output file, sorted by name.
@@ -322,6 +332,7 @@ func (b *builder) buildEvents(pkg *Package) error {
 	}
 	for _, pair := range pairs {
 		name, ref := pair[0], pair[1]
+		pkg.Subscriptions = append(pkg.Subscriptions, EventRef{Name: name, Type: ref})
 		def, ok := b.defs[ref]
 		if !ok {
 			return fmt.Errorf("schema: missing definition %q", ref)
