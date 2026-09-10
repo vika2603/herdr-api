@@ -28,9 +28,9 @@ func newError(code, format string, args ...any) *Error {
 }
 
 // Validate checks every rule herdr applies when it loads a manifest and
-// returns the first violation. Warnings are returned separately: an event hook
-// naming an unknown event and a manifest that leaves platforms undeclared are
-// warnings in herdr as well.
+// returns the first violation. Warnings are returned separately, as they are
+// in herdr: an event hook naming an event outside the set herdr fires hooks
+// for, and a manifest that leaves platforms undeclared.
 //
 // Values are validated with surrounding whitespace trimmed, the way herdr
 // normalizes them, but Validate does not rewrite the manifest. The one rule
@@ -87,7 +87,7 @@ func (m *Manifest) Validate() ([]string, error) {
 
 	var warnings []string
 	for _, event := range m.Events {
-		if name := strings.TrimSpace(event.On); !isKnownEventName(name) {
+		if name := strings.TrimSpace(event.On); !isHookEventName(name) {
 			warnings = append(warnings, fmt.Sprintf("unknown event '%s'", name))
 		}
 	}

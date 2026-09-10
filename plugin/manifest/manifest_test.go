@@ -100,6 +100,16 @@ func TestParseValid(t *testing.T) {
 			},
 		},
 		{
+			name:         "event excluded from manifest hooks warns",
+			file:         "excluded-event.toml",
+			wantWarnings: []string{"unknown event 'pane.output_changed'"},
+			check: func(t *testing.T, m *Manifest) {
+				if len(m.Events) != 2 {
+					t.Fatalf("events = %+v", m.Events)
+				}
+			},
+		},
+		{
 			name:         "undeclared platforms and unknown event warn",
 			file:         "no-platforms.toml",
 			wantWarnings: []string{"unknown event 'pane.exploded'", "manifest does not declare platforms; platform support unknown"},
