@@ -455,8 +455,10 @@ of herdr 0.9.0 shows that single difference; every other method the server
 accepts is generated. The method is absent from the schema because its framing
 is not newline-delimited JSON: after the server acknowledges the request, the
 client sends one JSON header followed by exactly `data_length` raw bytes per
-frame. Supporting it means a hand-written streaming type next to the
-transport, not a generated wrapper. See "Not built yet".
+frame, which no generated wrapper can express. It is written by hand instead;
+see "Graphics streaming" for what that covers and what it does not.
+`schema/known-gaps.json` records the difference so `just herdr-check` does not
+report it as drift.
 
 Rerun that comparison after a schema refresh: a method that appears in the
 error list but not in the snapshot is a method this module cannot reach.
