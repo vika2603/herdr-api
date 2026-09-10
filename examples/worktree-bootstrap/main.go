@@ -181,10 +181,13 @@ func bootstrap(ctx context.Context, client *herdr.Client, workspaceID string, p 
 	if err != nil {
 		return err
 	}
-	p.Agent.PaneID = agentPaneID(applied.Layout.Root)
+	p.Agent.PaneID = agentPaneID(applied.Layout.Root, p.Agent.Name)
 	if p.Agent.PaneID == "" {
 		return errors.New("layout.apply returned no pane to start the agent in")
 	}
+	// agent.start answers only once Herdr has detected the agent in the pane
+	// and considers it ready for input, which the response reports as
+	// interactive_ready, so the prompt needs no wait of its own.
 	started, err := client.AgentStart(ctx, p.Agent)
 	if err != nil {
 		return err
@@ -197,18 +200,16 @@ func bootstrap(ctx context.Context, client *herdr.Client, workspaceID string, p 
 	return err
 }
 
-// agentPaneID returns the pane id of the leftmost leaf of an applied layout,
-// which is where plan.layout puts the agent. Pane ids are assigned by
-// layout.apply, so they can only be read out of its answer.
-func agentPaneID(node herdr.LayoutNode) string {
-	switch node := node.(type) {
-	case herdr.LayoutNodePane:
-		return herdr.Value(node.PaneID)
-	case herdr.LayoutNodeSplit:
-		return agentPaneID(node.First)
-	default:
-		return ""
+// agentPaneID returns the id of the pane plan.layout labelled for the agent.
+// Pane ids are assigned by layout.apply, so they can only be read out of its
+// answer, and the label rather than the position is what identifies the pane.
+func agentPaneID(root herdr.LayoutNode, label string) string {
+	for _, pane := range herdr.LayoutPanes(root) {
+		if herdr.Value(pane.Label) == label {
+			return herdr.Value(pane.PaneID)
+		}
 	}
+	return ""
 }
 
 // loadConfig reads the configuration file over the defaults. ReadConfigJSON

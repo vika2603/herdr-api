@@ -121,8 +121,10 @@ func TestPlanLayoutUsesTheCheckout(t *testing.T) {
 	}
 }
 
-// agentPaneID walks a layout as layout.apply answers it, where every node is
-// a pointer and every pane carries the id the server assigned.
+// agentPaneID reads a layout as layout.apply answers it, where every pane
+// carries the id the server assigned and the labels are the ones the request
+// asked for. The agent pane is found by its label, so a layout.apply that
+// reorders the tree still starts the agent in the right pane.
 func TestAgentPaneID(t *testing.T) {
 	applied := herdr.LayoutNodeSplit{
 		Direction: herdr.SplitDirectionRight,
@@ -130,16 +132,16 @@ func TestAgentPaneID(t *testing.T) {
 		First: herdr.LayoutNodeSplit{
 			Direction: herdr.SplitDirectionDown,
 			Ratio:     0.5,
-			First:     herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-1")},
-			Second:    herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-2")},
+			First:     herdr.LayoutNodePane{Label: herdr.Ptr("shell"), PaneID: herdr.Ptr("pane-1")},
+			Second:    herdr.LayoutNodePane{Label: herdr.Ptr("issue-7"), PaneID: herdr.Ptr("pane-2")},
 		},
-		Second: herdr.LayoutNodePane{PaneID: herdr.Ptr("pane-3")},
+		Second: herdr.LayoutNodePane{Label: herdr.Ptr("notes"), PaneID: herdr.Ptr("pane-3")},
 	}
-	if got := agentPaneID(applied); got != "pane-1" {
-		t.Errorf("agentPaneID() = %q, want the leftmost pane", got)
+	if got := agentPaneID(applied, "issue-7"); got != "pane-2" {
+		t.Errorf("agentPaneID() = %q, want the pane labelled for the agent", got)
 	}
-	if got := agentPaneID(herdr.LayoutNodePane{}); got != "" {
-		t.Errorf("agentPaneID() = %q for a pane without an id, want the empty string", got)
+	if got := agentPaneID(applied, "absent"); got != "" {
+		t.Errorf("agentPaneID() = %q for a label no pane carries, want the empty string", got)
 	}
 }
 

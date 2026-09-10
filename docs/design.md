@@ -609,6 +609,13 @@ write that branch itself. There is no write counterpart: the configuration
 directory belongs to the user, and rewriting it would discard their comments
 and formatting.
 
+`LayoutPanes` walks an applied layout to its pane leaves. Pane ids are
+assigned by `layout.apply`, so a plugin that arranges panes and then acts on
+one of them can only learn its id from the response, and every such plugin
+was writing the same recursion. Labelling the panes in the request and
+matching the label in the answer identifies a pane without depending on its
+position.
+
 ### What is deliberately not included
 
 No wrapper for multi-step flows such as "split a pane, run a command, wait
