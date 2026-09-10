@@ -1,0 +1,33 @@
+# Example plugin: one action, reachable from a clicked issue link through a
+# link handler or from a selected URL. See README.md.
+
+id = "example.worktree-bootstrap"
+name = "Worktree Bootstrap"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Opens a worktree for an issue, lays out its panes and starts an agent on it"
+# Windows is left out to keep the example short: it would need a second entry
+# per command building and running herdr-worktree-bootstrap.exe.
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["go", "build", "-o", "herdr-worktree-bootstrap", "."]
+
+[[actions]]
+id = "bootstrap"
+title = "Bootstrap a worktree for this issue"
+description = "Create a worktree for the issue, lay out its panes and start an agent on it"
+# The selection context offers the action on a selected issue URL. A link
+# handler can invoke it whatever the contexts say.
+contexts = ["selection"]
+command = ["./herdr-worktree-bootstrap"]
+
+# Clicking a matching link in any pane offers this handler, which invokes the
+# action above with the URL in HERDR_PLUGIN_CLICKED_URL. The pattern is a
+# literal string so the regular expression needs no escaping; main.go holds
+# the same pattern.
+[[link_handlers]]
+id = "issue"
+title = "Bootstrap a worktree"
+pattern = '^https://github\.com/[^/]+/[^/]+/(issues|pull)/([0-9]+)\b'
+action = "bootstrap"
