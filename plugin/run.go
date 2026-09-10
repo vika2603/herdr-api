@@ -42,6 +42,10 @@ type Handlers struct {
 // entrypoint kind and returns the process exit code, so a plugin's main is
 // os.Exit(plugin.Run(ctx, handlers)).
 //
+// Run neither installs signal handlers nor cancels ctx on its own. A pane
+// entrypoint, which runs until the user closes the pane, should pass a
+// context from ShutdownContext so that closing the pane ends it cleanly.
+//
 // Errors are written to stderr, which Herdr captures in its plugin command log
 // alongside the exit code. See ExitOK, ExitHandlerError and ExitRuntimeError.
 func Run(ctx context.Context, h Handlers) int {

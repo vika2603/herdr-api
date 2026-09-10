@@ -172,7 +172,25 @@ log.Println(env.PluginID, env.Kind(), env.StateDir)
 ```
 
 `Kind` reports which manifest entrypoint started the process: a startup hook,
-an action, an event hook or a pane command. Durable state belongs under
+an action, an event hook or a pane command. `Run` dispatches to a handler per
+kind and returns the exit code Herdr records in its plugin command log:
+
+```go
+func main() {
+	ctx, stop := plugin.ShutdownContext(context.Background())
+	defer stop()
+
+	os.Exit(plugin.Run(ctx, plugin.Handlers{
+		Event: func(ctx context.Context, env *plugin.Env, event *herdr.EventEnvelope) error {
+			return record(env, event)
+		},
+	}))
+}
+```
+
+`ShutdownContext` matters for a pane entrypoint, which runs until the user
+closes the pane: closing it delivers SIGHUP and then SIGTERM, and the context
+ends on either. Durable state belongs under
 `env.StateDir` and user-editable configuration under `env.ConfigDir`; the
 plugin's own directory is a managed checkout when it was installed from
 GitHub.

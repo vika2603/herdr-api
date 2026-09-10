@@ -326,6 +326,15 @@ which manifest entrypoint started the process: a startup hook sets
 dotted event name, an action sets `HERDR_PLUGIN_ACTION_ID`, and a pane command
 sets `HERDR_PLUGIN_ENTRYPOINT_ID`.
 
+`ShutdownContext` cancels a context when Herdr asks the process to stop, which
+a pane entrypoint needs because it runs until the user closes the pane and
+nothing else tells it to finish. Closing a pane delivers SIGHUP and then
+SIGTERM to the process in it. That was measured against a running server, by
+opening a pane on a trapping script through `layout.apply` and closing it with
+`pane.close`, not inferred: herdr has no explicit kill on that path, and the
+plan had wrongly guessed SIGINT. `Run` installs nothing itself, so a plugin
+opts in by passing the context.
+
 `Run` dispatches by kind and returns a process exit code: `ExitOK` when the
 handler returned nil, `ExitHandlerError` when it returned an error, and
 `ExitRuntimeError` when no handler ran at all. Herdr records the exit status
@@ -461,11 +470,6 @@ one JSON header and then exactly `data_length` raw bytes per frame on a
 connection that stays open, so it needs a hand-written type beside the
 transport rather than a generated wrapper. `pane_graphics_frame_ack` is the
 one result variant no method in `method-results.json` returns, which fits.
-
-**A shutdown signal for `Run`.** A pane entrypoint runs until the user closes
-it, and `Run` passes the caller's context straight through, so a plugin has to
-arrange its own signal handling. An option that cancels on SIGINT and SIGTERM
-belongs next to it.
 
 **The last 20 methods.** `agent.start`, `agent.prompt` and `agent.send_keys`
 need a real agent process in the pane; a machine with a supported agent CLI
