@@ -133,7 +133,11 @@ func stageEditScrollback(t *testing.T, h *harness, st *state) {
 		if before[paneID] {
 			continue
 		}
-		if _, err := h.client.PaneClose(h.ctx(t), herdr.PaneTarget{PaneID: paneID}); err != nil {
+		// The editor pane closes itself when its editor exits, which can
+		// happen before this call arrives. The stage needs the layout
+		// restored, not this particular close to succeed.
+		_, err := h.client.PaneClose(h.ctx(t), herdr.PaneTarget{PaneID: paneID})
+		if err != nil && !herdr.IsCode(err, herdr.ErrCodePaneNotFound) {
 			t.Errorf("close the editor pane %s: %v", paneID, err)
 		}
 	}
