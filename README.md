@@ -291,18 +291,18 @@ eligible.
 
 ## Layout
 
-| Path                               | Contents                                                                 |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| `herdr`                            | Transport, plus the generated types, results, events and method wrappers |
-| `plugin`                           | The environment Herdr injects into plugin commands, and the registry     |
-| `plugin/manifest`                  | `herdr-plugin.toml` parsing and validation                               |
-| `plugin/plugintest`                | A plugin environment built in memory, and the manifest check             |
-| `examples`                         | Worked plugins                                                           |
-| `cmd/herdr-apigen`, `internal/gen` | The generator that produces `*_gen.go`                                   |
-| `internal/e2e`                     | The suite that proves the result types against a real server             |
-| `internal/cmd/herdrcheck`          | The drift report `just herdr-check` runs                                 |
-| `schema`                           | The schema snapshot and the method-to-result table                       |
-| `docs/design.md`                   | Protocol facts, generation rules and the development plan                |
+| Path                                | Contents                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------ |
+| `herdr`                             | Transport, plus the generated types, results, events and method wrappers |
+| `plugin`                            | The environment Herdr injects into plugin commands, and the registry     |
+| `plugin/manifest`                   | `herdr-plugin.toml` parsing and validation                               |
+| `plugin/plugintest`                 | A plugin environment built in memory, and the manifest check             |
+| `examples`                          | Worked plugins                                                           |
+| `cmd/herdr-api-gen`, `internal/gen` | The generator that produces `*_gen.go`                                   |
+| `internal/e2e`                      | The suite that proves the result types against a real server             |
+| `internal/cmd/herdrcheck`           | The drift report `just herdr-check` runs                                 |
+| `schema`                            | The schema snapshot and the method-to-result table                       |
+| `docs/design.md`                    | Protocol facts, generation rules and the development plan                |
 
 ## Upgrading to a new herdr
 

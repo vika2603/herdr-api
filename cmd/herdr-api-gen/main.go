@@ -1,4 +1,4 @@
-// Command herdr-apigen generates the Go API surface of package herdr from
+// Command herdr-api-gen generates the Go API surface of package herdr from
 // the Herdr socket API schema. See docs/design.md.
 package main
 
@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "herdr-apigen:", err)
+		fmt.Fprintln(os.Stderr, "herdr-api-gen:", err)
 		os.Exit(1)
 	}
 }

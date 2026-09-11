@@ -7,4 +7,4 @@
 // handwritten. See docs/design.md for the layout and the generation rules.
 package herdr
 
-//go:generate go run ../cmd/herdr-apigen -schema ../schema/herdr-api.schema.json -methods ../schema/method-results.json -out .
+//go:generate go run ../cmd/herdr-api-gen -schema ../schema/herdr-api.schema.json -methods ../schema/method-results.json -out .
