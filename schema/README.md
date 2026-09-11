@@ -25,6 +25,10 @@ as known and fails only on new drift.
 
 ## Refreshing
 
+The `Track herdr` workflow performs this against each new herdr release and
+opens a pull request, so the steps below are for refreshing against a binary
+installed locally.
+
 ```bash
 just herdr-check            # report what moved before changing anything
 just schema-update          # rewrite herdr-api.schema.json from the installed herdr

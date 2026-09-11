@@ -1,0 +1,299 @@
+name: Track herdr
+
+# Opens a pull request when herdr publishes a release newer than the one the
+# schema snapshot was taken from. The release binary is downloaded from the
+# upstream repository, so the upgrade reflects that release and not whatever
+# herdr happens to be installed on a maintainer's machine.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'herdr release tag to upgrade to, e.g. v0.9.0 or a preview tag (default: the latest stable release)'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      current: ${{ steps.resolve.outputs.current }}
+      branch: ${{ steps.resolve.outputs.branch }}
+      proceed: ${{ steps.resolve.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          # `gh release view` with no tag resolves the latest release excluding
+          # prereleases, which is what keeps the schedule off the preview builds
+          # upstream publishes between versions.
+          if [ -n "$REQUESTED" ]; then
+            tag="$REQUESTED"
+          else
+            tag="$(gh release view --repo herdrdev/herdr --json tagName --jq .tagName)"
+          fi
+          current="$(jq -r .herdr_version schema/method-results.json)"
+          branch="herdr-${tag#v}"
+          {
+            echo "tag=$tag"
+            echo "current=$current"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "${tag#v}" = "$current" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "The snapshot is already taken from herdr $current." >> "$GITHUB_STEP_SUMMARY"
+          elif git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "Branch \`$branch\` already exists, so $tag has been prepared already." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "$tag is newer than the snapshot's herdr $current." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  upgrade:
+    needs: check
+    if: needs.check.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.check.outputs.tag }}
+      CURRENT: ${{ needs.check.outputs.current }}
+      BRANCH: ${{ needs.check.outputs.branch }}
+    steps:
+      # The pull request is created with a personal access token rather than
+      # GITHUB_TOKEN so that CI runs on it; GitHub does not trigger workflows
+      # for events its own token produced. Without the secret the run would
+      # otherwise get as far as the push before failing.
+      - name: Require the pull request token
+        env:
+          TOKEN: ${{ secrets.HERDR_UPGRADE_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "HERDR_UPGRADE_TOKEN is not set; see the upgrade section of README.md" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HERDR_UPGRADE_TOKEN }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install the herdr release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          gh release download "$TAG" --repo herdrdev/herdr \
+            --pattern herdr-linux-x86_64 --output "$RUNNER_TEMP/bin/herdr"
+          chmod +x "$RUNNER_TEMP/bin/herdr"
+          # The version recorded in the snapshot comes from the binary, not from
+          # the tag, because a preview tag names a build rather than a version.
+          # A release tag does name one, so it has to agree.
+          target="$("$RUNNER_TEMP/bin/herdr" --version)"
+          target="${target#herdr }"
+          case "$TAG" in
+            v[0-9]*)
+              if [ "$target" != "${TAG#v}" ]; then
+                echo "$TAG downloaded a binary reporting herdr $target" >&2
+                exit 1
+              fi
+              ;;
+          esac
+          echo "TARGET=$target" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Refresh the schema snapshot
+        run: |
+          set -euo pipefail
+          herdr api schema --output schema/herdr-api.schema.json
+          protocol="$(jq -r .protocol schema/herdr-api.schema.json)"
+          schema_version="$(jq -r .schema_version schema/herdr-api.schema.json)"
+          tmp="$(mktemp)"
+          jq --arg v "$TARGET" --argjson p "$protocol" \
+            '.herdr_version = $v | .protocol = $p' schema/method-results.json > "$tmp"
+          mv "$tmp" schema/method-results.json
+          {
+            echo "PROTOCOL=$protocol"
+            echo "SCHEMA_VERSION=$schema_version"
+          } >> "$GITHUB_ENV"
+
+      - name: Record the snapshot version in the docs
+        run: |
+          set -euo pipefail
+          sed -i "s/generated against herdr [0-9][0-9A-Za-z.+-]*,/generated against herdr $TARGET,/" README.md
+          sed -i "s/^protocol [0-9]*:/protocol $PROTOCOL:/" README.md
+          sed -i "s/^| herdr version | .* |$/| herdr version | $TARGET |/" schema/README.md
+          sed -i "s/^| \`protocol\` | .* |$/| \`protocol\` | $PROTOCOL |/" schema/README.md
+          sed -i "s/^| \`schema_version\` | .* |$/| \`schema_version\` | $SCHEMA_VERSION |/" schema/README.md
+
+      # The generator refuses to run while a method in the schema has no entry
+      # in method-results.json, which is the expected outcome of a release that
+      # adds methods. It writes nothing when it refuses, so the branch still
+      # carries a usable snapshot and the failure becomes a review item.
+      - name: Regenerate the API surface
+        id: generate
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          go generate ./... 2>&1 | tee "$RUNNER_TEMP/generate.log"
+
+      - name: Build and test
+        id: test
+        if: steps.generate.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          go build ./... 2>&1 | tee "$RUNNER_TEMP/test.log"
+          go test -race ./... 2>&1 | tee -a "$RUNNER_TEMP/test.log"
+
+      - name: Compare a running server against the refreshed snapshot
+        id: herdrcheck
+        continue-on-error: true
+        env:
+          XDG_CONFIG_HOME: ${{ runner.temp }}/herdr-config
+          HERDR_SOCKET_PATH: ${{ runner.temp }}/herdr.sock
+        run: |
+          set -o pipefail
+          mkdir -p "$XDG_CONFIG_HOME"
+          # The step does not finish while a background process still holds its
+          # stdout, so the server's output goes to a file.
+          herdr server >"$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 1 15); do
+            if herdr status server 2>/dev/null | grep -q 'status: running'; then
+              break
+            fi
+            sleep 1
+          done
+          # herdrcheck only notes an unreachable server, so the run has to fail
+          # here rather than report "no drift" for a comparison never made.
+          herdr status server | grep -q 'status: running'
+          go run ./internal/cmd/herdrcheck 2>&1 | tee "$RUNNER_TEMP/herdrcheck.log"
+
+      - name: Stop the server
+        if: always()
+        continue-on-error: true
+        env:
+          HERDR_SOCKET_PATH: ${{ runner.temp }}/herdr.sock
+        run: herdr server stop
+
+      # known-gaps.json records the version its entries were last confirmed
+      # against, so it moves only when herdrcheck found every gap still open
+      # and nothing beyond them.
+      - name: Record the gap list as confirmed against the release
+        if: steps.herdrcheck.outcome == 'success'
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq --arg v "$TARGET" '.herdr_version = $v' schema/known-gaps.json > "$tmp"
+          mv "$tmp" schema/known-gaps.json
+
+      - name: Run the e2e suite against the release
+        id: e2e
+        if: steps.generate.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          go test -tags e2e -count=1 -v ./internal/e2e/... 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+
+      - name: Compose the pull request body
+        env:
+          GENERATE: ${{ steps.generate.outcome }}
+          TEST: ${{ steps.test.outcome }}
+          HERDRCHECK: ${{ steps.herdrcheck.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/pr-body.md"
+
+          outcome() {
+            case "$1" in
+              success) echo "passed" ;;
+              failure) echo "**failed**" ;;
+              *) echo "skipped" ;;
+            esac
+          }
+
+          log_section() {
+            local title="$1" file="$2"
+            [ -s "$file" ] || return 0
+            {
+              echo "<details><summary>$title</summary>"
+              echo
+              echo '```'
+              tail -c 8000 "$file"
+              echo '```'
+              echo
+              echo "</details>"
+              echo
+            } >> "$body"
+          }
+
+          {
+            echo "herdr $TARGET is out; the snapshot was taken from $CURRENT."
+            echo "The schema below came from the \`herdr-linux-x86_64\` asset of \`$TAG\`."
+            echo
+            echo "| Step | Result |"
+            echo "| --- | --- |"
+            echo "| \`go generate ./...\` | $(outcome "$GENERATE") |"
+            echo "| \`go build\` and \`go test -race\` | $(outcome "$TEST") |"
+            echo "| \`herdrcheck\` against a $TARGET server | $(outcome "$HERDRCHECK") |"
+            echo "| \`internal/e2e\` against a $TARGET server | $(outcome "$E2E") |"
+            echo
+            echo "Lint and the cross-platform type-check run in CI on this pull request."
+            echo
+            echo "Before merging:"
+            echo
+            echo "- [ ] Add an entry to \`schema/method-results.json\` for every method the release added, then rerun \`just gen\`."
+            echo "- [ ] Re-derive that table from the herdr v$TARGET handler sources and update its \`_comment\`, which still names the version it was read from."
+            echo "- [ ] Walk the upgrade checklist in \`docs/design.md\`: it lists the behaviour the schema does not describe, along with the herdr source file each fact came from."
+            echo "- [ ] Update the method and e2e coverage counts in \`README.md\` and \`schema/README.md\` if they moved."
+            echo
+          } > "$body"
+
+          log_section "go generate" "$RUNNER_TEMP/generate.log"
+          log_section "go build and go test" "$RUNNER_TEMP/test.log"
+          log_section "herdrcheck" "$RUNNER_TEMP/herdrcheck.log"
+          log_section "e2e" "$RUNNER_TEMP/e2e.log"
+
+          cat "$body" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open the pull request
+        env:
+          GH_TOKEN: ${{ secrets.HERDR_UPGRADE_TOKEN }}
+          GENERATE: ${{ steps.generate.outcome }}
+          TEST: ${{ steps.test.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git add -A schema README.md herdr
+
+          if [ "$GENERATE" = success ]; then
+            message="Regenerate the client against herdr $TARGET"
+          else
+            message="Refresh the schema snapshot for herdr $TARGET"
+          fi
+          git commit -m "$message"
+          git push origin "$BRANCH"
+
+          draft=()
+          if [ "$GENERATE" != success ] || [ "$TEST" != success ] || [ "$E2E" != success ]; then
+            draft=(--draft)
+          fi
+          gh pr create "${draft[@]}" \
+            --head "$BRANCH" \
+            --title "$message" \
+            --body-file "$RUNNER_TEMP/pr-body.md"

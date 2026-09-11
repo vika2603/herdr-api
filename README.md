@@ -310,6 +310,14 @@ eligible.
 
 ## Upgrading to a new herdr
 
+The `Track herdr` workflow does the mechanical part on a schedule: it
+downloads the newest herdr release from `herdrdev/herdr`, rewrites the
+snapshot from that binary, regenerates, runs the e2e suite against a server it
+starts from it, and opens a pull request carrying the drift report and the
+review items the schema cannot settle. Nothing about it depends on the herdr a
+maintainer has installed. The commands below are the same upgrade run locally,
+against the installed binary.
+
 ```bash
 just herdr-check     # report what moved before changing anything
 just schema-update   # rewrite schema/herdr-api.schema.json from the installed herdr
