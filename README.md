@@ -317,10 +317,11 @@ starts from it, and opens a pull request carrying the drift report and the
 review items the schema cannot settle. Nothing about it depends on the herdr a
 maintainer has installed.
 
-That pull request carries no check runs of its own, because GitHub does not
-trigger workflows for events its own token produced, so the workflow runs
-everything `just check` covers and reports the results in the body. Pushing a
-commit to the branch starts CI as usual.
+GitHub does not run workflows for events its own token produced, so the CI run
+on that pull request is created but never executed and its red mark reports
+nothing. The workflow therefore runs everything `just check` covers and reports
+the results in the body. A commit pushed to the branch by hand starts CI on
+it.
 
 The commands below are the same upgrade run locally, against the installed
 binary.

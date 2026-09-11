@@ -261,10 +261,10 @@ jobs:
             echo "| \`herdrcheck\` against a $TARGET server | $(outcome "$HERDRCHECK") |"
             echo "| \`internal/e2e\` against a $TARGET server | $(outcome "$E2E") |"
             echo
-            echo "GitHub does not run workflows for events its own token produced, so this"
-            echo "pull request carries no check runs of its own; the results above come from"
-            echo "[the run that opened it]($RUN_URL). Pushing a commit to the branch starts CI"
-            echo "as usual."
+            echo "GitHub does not run workflows for events its own token produced. The CI"
+            echo "run on this pull request was created but never executed, so its red mark"
+            echo "reports nothing; the results above come from [the run that opened this pull"
+            echo "request]($RUN_URL). A commit pushed to the branch by hand starts CI on it."
             echo
             echo "Before merging:"
             echo
