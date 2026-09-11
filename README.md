@@ -1,7 +1,8 @@
 # Herdr Client
 
-Go client for [Herdr](https://herdr.dev): the full socket API, a live mirror
-of the session, and the pieces a Herdr plugin written in Go needs.
+Go client for [Herdr](https://herdr.dev), generated against herdr 0.9.0,
+protocol 22: the full socket API, a live mirror of the session, and the
+pieces a Herdr plugin written in Go needs.
 
 The wire types, the result and event decoders, and a typed wrapper for every
 one of the 102 API methods are generated from the schema the herdr binary
@@ -9,7 +10,10 @@ prints, so the client tracks the server rather than a hand-written guess of
 it. The transport, the session mirror, the graphics frame stream, the plugin
 process environment and the manifest parser are hand-written.
 
-Generated against herdr 0.9.0, protocol 22.
+When herdr moves, `just herdr-check` reports the drift and `just gen`
+regenerates from the new schema, so a protocol bump arrives as a diff to
+review rather than as a runtime surprise. See
+[Upgrading to a new herdr](#upgrading-to-a-new-herdr).
 
 ## Install
 
