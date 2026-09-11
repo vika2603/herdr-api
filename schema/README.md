@@ -6,7 +6,7 @@ generated Go type and method wrapper in this module.
 
 | Field | Value |
 | --- | --- |
-| herdr version | 0.9.0 |
+| herdr version | 0.9.0-preview.2026-09-08-62431dbd033b |
 | `protocol` | 22 |
 | `schema_version` | 1 |
 
