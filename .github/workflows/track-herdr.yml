@@ -105,6 +105,13 @@ jobs:
         run: |
           set -euo pipefail
           herdr api schema --output schema/herdr-api.schema.json
+          # An unchanged schema cannot change the generated code, which leaves
+          # the recorded version as the whole of the diff.
+          if git diff --quiet -- schema/herdr-api.schema.json; then
+            echo "SCHEMA_CHANGED=false" >> "$GITHUB_ENV"
+          else
+            echo "SCHEMA_CHANGED=true" >> "$GITHUB_ENV"
+          fi
           protocol="$(jq -r .protocol schema/herdr-api.schema.json)"
           schema_version="$(jq -r .schema_version schema/herdr-api.schema.json)"
           tmp="$(mktemp)"
@@ -225,6 +232,15 @@ jobs:
           set -euo pipefail
           body="$RUNNER_TEMP/pr-body.md"
 
+          if [ "$GENERATE" = success ] && [ "$TEST" = success ] \
+            && [ "$LINT" = success ] && [ "$CROSS" = success ] \
+            && [ "$HERDRCHECK" = success ] && [ "$E2E" = success ]; then
+            all_passed=true
+          else
+            all_passed=false
+          fi
+          echo "ALL_PASSED=$all_passed" >> "$GITHUB_ENV"
+
           outcome() {
             case "$1" in
               success) echo "passed" ;;
@@ -266,12 +282,20 @@ jobs:
             echo "reports nothing; the results above come from [the run that opened this pull"
             echo "request]($RUN_URL). A commit pushed to the branch by hand starts CI on it."
             echo
-            echo "Before merging:"
-            echo
-            echo "- [ ] Add an entry to \`schema/method-results.json\` for every method the release added, then rerun \`just gen\`."
-            echo "- [ ] Re-derive that table from the herdr v$TARGET handler sources and update its \`_comment\`, which still names the version it was read from."
-            echo "- [ ] Walk the upgrade checklist in \`docs/design.md\`: it lists the behaviour the schema does not describe, along with the herdr source file each fact came from."
-            echo "- [ ] Update the method and e2e coverage counts in \`README.md\` and \`schema/README.md\` if they moved."
+            if [ "$all_passed" = true ] && [ "$SCHEMA_CHANGED" = false ]; then
+              echo "The release left the schema byte for byte what it was, so the recorded"
+              echo "version is the whole of this diff and the workflow merges it. Behaviour"
+              echo "the schema does not describe can still have moved: the upgrade checklist"
+              echo "in \`docs/design.md\` lists those facts with the herdr source file each came"
+              echo "from, and nothing here regenerates them."
+            else
+              echo "Before merging:"
+              echo
+              echo "- [ ] Add an entry to \`schema/method-results.json\` for every method the release added, then rerun \`just gen\`."
+              echo "- [ ] Re-derive that table from the herdr v$TARGET handler sources and update its \`_comment\`, which still names the version it was read from."
+              echo "- [ ] Walk the upgrade checklist in \`docs/design.md\`: it lists the behaviour the schema does not describe, along with the herdr source file each fact came from."
+              echo "- [ ] Update the method and e2e coverage counts in \`README.md\` and \`schema/README.md\` if they moved."
+            fi
             echo
           } > "$body"
 
@@ -287,10 +311,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GENERATE: ${{ steps.generate.outcome }}
-          TEST: ${{ steps.test.outcome }}
-          LINT: ${{ steps.lint.outcome }}
-          CROSS: ${{ steps.cross.outcome }}
-          E2E: ${{ steps.e2e.outcome }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -307,11 +327,33 @@ jobs:
           git push origin "$BRANCH"
 
           draft=()
-          if [ "$GENERATE" != success ] || [ "$TEST" != success ] \
-            || [ "$LINT" != success ] || [ "$CROSS" != success ] || [ "$E2E" != success ]; then
+          if [ "$ALL_PASSED" != true ]; then
             draft=(--draft)
           fi
           gh pr create "${draft[@]}" \
             --head "$BRANCH" \
             --title "$message" \
             --body-file "$RUNNER_TEMP/pr-body.md"
+
+          # A release that leaves the schema alone moves nothing but the
+          # recorded version, so there is no diff for a reviewer to read. The
+          # branch holds one commit on the tip of the default branch, which is
+          # why rebasing it keeps that commit and its message as written.
+          if [ "$ALL_PASSED" = true ] && [ "$SCHEMA_CHANGED" = false ]; then
+            # GitHub computes mergeability after the pull request exists, so a
+            # merge sent straight away can be refused for a state it has not
+            # worked out yet.
+            merged=false
+            for _ in 1 2 3 4 5; do
+              if gh pr merge "$BRANCH" --rebase; then
+                merged=true
+                break
+              fi
+              sleep 5
+            done
+            if [ "$merged" != true ]; then
+              echo "the pull request is open and was not merged" >&2
+              exit 1
+            fi
+            git push origin --delete "$BRANCH"
+          fi

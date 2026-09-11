@@ -323,6 +323,12 @@ nothing. The workflow therefore runs everything `just check` covers and reports
 the results in the body. A commit pushed to the branch by hand starts CI on
 it.
 
+A release that leaves `schema/herdr-api.schema.json` byte for byte what it was
+cannot change the generated code, so the recorded version is the whole of the
+diff; the workflow merges that pull request itself once every check has passed.
+Any change to the schema waits for a reviewer. Tagging a release of this module
+is not automated.
+
 The commands below are the same upgrade run locally, against the installed
 binary.
 
