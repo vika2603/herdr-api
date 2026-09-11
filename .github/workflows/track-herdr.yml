@@ -64,26 +64,19 @@ jobs:
     needs: check
     if: needs.check.outputs.proceed == 'true'
     runs-on: ubuntu-latest
+    # GitHub does not trigger workflows for events GITHUB_TOKEN produced, so
+    # no check run appears on the pull request this job opens. Everything `just
+    # check` covers therefore runs here, and the run that opened the pull
+    # request is what its body points at.
+    permissions:
+      contents: write
+      pull-requests: write
     env:
       TAG: ${{ needs.check.outputs.tag }}
       CURRENT: ${{ needs.check.outputs.current }}
       BRANCH: ${{ needs.check.outputs.branch }}
     steps:
-      # The pull request is created with a personal access token rather than
-      # GITHUB_TOKEN so that CI runs on it; GitHub does not trigger workflows
-      # for events its own token produced. Without the secret the run would
-      # otherwise get as far as the push before failing.
-      - name: Require the pull request token
-        env:
-          TOKEN: ${{ secrets.HERDR_UPGRADE_TOKEN }}
-        run: |
-          if [ -z "$TOKEN" ]; then
-            echo "HERDR_UPGRADE_TOKEN is not set; see the upgrade section of README.md" >&2
-            exit 1
-          fi
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.HERDR_UPGRADE_TOKEN }}
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -157,6 +150,24 @@ jobs:
           go build ./... 2>&1 | tee "$RUNNER_TEMP/test.log"
           go test -race ./... 2>&1 | tee -a "$RUNNER_TEMP/test.log"
 
+      - name: Lint
+        id: lint
+        if: steps.generate.outcome == 'success'
+        continue-on-error: true
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.13
+
+      - name: Type-check the other platforms
+        id: cross
+        if: steps.generate.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          for goos in linux darwin windows; do
+            GOOS="$goos" go vet ./... 2>&1 | tee -a "$RUNNER_TEMP/cross.log"
+          done
+
       - name: Compare a running server against the refreshed snapshot
         id: herdrcheck
         continue-on-error: true
@@ -210,8 +221,11 @@ jobs:
         env:
           GENERATE: ${{ steps.generate.outcome }}
           TEST: ${{ steps.test.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          CROSS: ${{ steps.cross.outcome }}
           HERDRCHECK: ${{ steps.herdrcheck.outcome }}
           E2E: ${{ steps.e2e.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           body="$RUNNER_TEMP/pr-body.md"
@@ -247,10 +261,15 @@ jobs:
             echo "| --- | --- |"
             echo "| \`go generate ./...\` | $(outcome "$GENERATE") |"
             echo "| \`go build\` and \`go test -race\` | $(outcome "$TEST") |"
+            echo "| \`golangci-lint\` | $(outcome "$LINT") |"
+            echo "| \`go vet\` for linux, darwin and windows | $(outcome "$CROSS") |"
             echo "| \`herdrcheck\` against a $TARGET server | $(outcome "$HERDRCHECK") |"
             echo "| \`internal/e2e\` against a $TARGET server | $(outcome "$E2E") |"
             echo
-            echo "Lint and the cross-platform type-check run in CI on this pull request."
+            echo "GitHub does not run workflows for events its own token produced, so this"
+            echo "pull request carries no check runs of its own; the results above come from"
+            echo "[the run that opened it]($RUN_URL). Pushing a commit to the branch starts CI"
+            echo "as usual."
             echo
             echo "Before merging:"
             echo
@@ -263,6 +282,7 @@ jobs:
 
           log_section "go generate" "$RUNNER_TEMP/generate.log"
           log_section "go build and go test" "$RUNNER_TEMP/test.log"
+          log_section "go vet for the other platforms" "$RUNNER_TEMP/cross.log"
           log_section "herdrcheck" "$RUNNER_TEMP/herdrcheck.log"
           log_section "e2e" "$RUNNER_TEMP/e2e.log"
 
@@ -270,9 +290,11 @@ jobs:
 
       - name: Open the pull request
         env:
-          GH_TOKEN: ${{ secrets.HERDR_UPGRADE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GENERATE: ${{ steps.generate.outcome }}
           TEST: ${{ steps.test.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          CROSS: ${{ steps.cross.outcome }}
           E2E: ${{ steps.e2e.outcome }}
         run: |
           set -euo pipefail
@@ -290,7 +312,8 @@ jobs:
           git push origin "$BRANCH"
 
           draft=()
-          if [ "$GENERATE" != success ] || [ "$TEST" != success ] || [ "$E2E" != success ]; then
+          if [ "$GENERATE" != success ] || [ "$TEST" != success ] \
+            || [ "$LINT" != success ] || [ "$CROSS" != success ] || [ "$E2E" != success ]; then
             draft=(--draft)
           fi
           gh pr create "${draft[@]}" \

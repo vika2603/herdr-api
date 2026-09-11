@@ -315,8 +315,15 @@ downloads the newest herdr release from `herdrdev/herdr`, rewrites the
 snapshot from that binary, regenerates, runs the e2e suite against a server it
 starts from it, and opens a pull request carrying the drift report and the
 review items the schema cannot settle. Nothing about it depends on the herdr a
-maintainer has installed. The commands below are the same upgrade run locally,
-against the installed binary.
+maintainer has installed.
+
+That pull request carries no check runs of its own, because GitHub does not
+trigger workflows for events its own token produced, so the workflow runs
+everything `just check` covers and reports the results in the body. Pushing a
+commit to the branch starts CI as usual.
+
+The commands below are the same upgrade run locally, against the installed
+binary.
 
 ```bash
 just herdr-check     # report what moved before changing anything
