@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'herdr release tag to upgrade to, e.g. v0.9.0 or a preview tag (default: the latest stable release)'
+        description: 'herdr release tag to upgrade to, e.g. v0.9.0 (default: the latest release)'
         required: false
 
 permissions:
@@ -90,19 +90,14 @@ jobs:
           gh release download "$TAG" --repo herdrdev/herdr \
             --pattern herdr-linux-x86_64 --output "$RUNNER_TEMP/bin/herdr"
           chmod +x "$RUNNER_TEMP/bin/herdr"
-          # The version recorded in the snapshot comes from the binary, not from
-          # the tag, because a preview tag names a build rather than a version.
-          # A release tag does name one, so it has to agree.
-          target="$("$RUNNER_TEMP/bin/herdr" --version)"
-          target="${target#herdr }"
-          case "$TAG" in
-            v[0-9]*)
-              if [ "$target" != "${TAG#v}" ]; then
-                echo "$TAG downloaded a binary reporting herdr $target" >&2
-                exit 1
-              fi
-              ;;
-          esac
+          # The asset name carries no version, so confirm the binary is the
+          # release that was asked for before generating anything from it.
+          target="${TAG#v}"
+          got="$("$RUNNER_TEMP/bin/herdr" --version)"
+          if [ "$got" != "herdr $target" ]; then
+            echo "$TAG downloaded a binary reporting \"$got\"" >&2
+            exit 1
+          fi
           echo "TARGET=$target" >> "$GITHUB_ENV"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
