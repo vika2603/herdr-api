@@ -27,6 +27,12 @@ that carry no discriminator.
   response line, and closes the connection (`src/api/server.rs`,
   `handle_connection`). Ordinary calls therefore dial a fresh connection each
   time; connections cannot be reused or pipelined.
+- The server looks for the request line as soon as it accepts the connection
+  and, finding nothing there, waits out a poll interval before looking again.
+  Measured against herdr 0.9.0, a request that arrives more than roughly
+  0.2 ms after the connection opens is answered about 100 ms later, while one
+  that is already waiting is answered in under a millisecond. This is why
+  every request here is encoded before the connection is dialed.
 - `events.subscribe` keeps the connection open after answering
   `{"type":"subscription_started"}` and pushes one event per line. Writing
   anything further on that connection makes the server close it.
@@ -89,6 +95,13 @@ response line and close, because that is all the server allows. A `nil`
 `params` is sent as `{}`. An error response becomes `*Error` carrying the
 method. Cancelling the context closes the connection, which is the only way to
 unblock a read on every platform, and the call reports `ctx.Err()`.
+
+The request line is encoded before the dial, here as in `OpenStream` and
+`PaneGraphicsStream`, so that it is ready to write the moment the connection
+opens. The server's first read decides whether the call is answered
+immediately or a poll interval later, which is enough time to encode a request
+in but not enough to encode one after. An encoding failure therefore surfaces
+without a connection having been made.
 
 `OpenStream` keeps the connection and hands back a `*Stream` whose `Next`
 decodes each pushed line into a `RawEvent`; `Ack` holds the result of the

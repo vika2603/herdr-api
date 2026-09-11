@@ -46,6 +46,49 @@ func TestCallSendsOneRequestLineAndDecodesResult(t *testing.T) {
 	}
 }
 
+// unencodable is a params value json.Marshal refuses, which is how the tests
+// below reach the encoding failure without a live server.
+type unencodable struct{}
+
+func (unencodable) MarshalJSON() ([]byte, error) { return nil, errors.New("unencodable") }
+
+func TestRequestIsEncodedBeforeTheConnectionIsDialed(t *testing.T) {
+	cases := []struct {
+		name string
+		call func(*Client) error
+	}{
+		{"CallRaw", func(c *Client) error {
+			_, err := c.CallRaw(context.Background(), "pane.get", unencodable{})
+			return err
+		}},
+		{"OpenStream", func(c *Client) error {
+			_, err := c.OpenStream(context.Background(), "events.subscribe", unencodable{})
+			return err
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := newFakeServer(t, func(s *fakeSession) {
+				s.success(json.RawMessage(pongResult))
+			})
+			client := New(server.path)
+
+			if err := tc.call(client); err == nil {
+				t.Fatal("expected the encoding failure to be reported")
+			}
+			// The answered call proves the accept loop has run: it counts
+			// accepts in order, so a connection dialed for the failed call
+			// would already be counted.
+			if err := client.Call(context.Background(), "ping", nil, nil); err != nil {
+				t.Fatalf("Call: %v", err)
+			}
+			if got := server.acceptCount(); got != 1 {
+				t.Errorf("server accepted %d connections, want 1", got)
+			}
+		})
+	}
+}
+
 func TestCallSendsSuppliedParams(t *testing.T) {
 	server := newFakeServer(t, func(s *fakeSession) {
 		s.success(json.RawMessage(`{"type":"ok"}`))

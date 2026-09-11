@@ -119,6 +119,10 @@ type GraphicsStream struct {
 // off, pane_not_found for an unknown pane, stream_conflict when the layer
 // already has a stream, and layer_limit when the pane has no room for one.
 func (c *Client) PaneGraphicsStream(ctx context.Context, params PaneGraphicsStreamParams) (*GraphicsStream, error) {
+	request, err := requestLine(c.requestID(), MethodPaneGraphicsStream, params)
+	if err != nil {
+		return nil, requestError(ctx, MethodPaneGraphicsStream, "cannot send request", err)
+	}
 	conn, err := dialSocket(ctx, c.socketPath, c.dialTimeout)
 	if err != nil {
 		return nil, err
@@ -127,7 +131,7 @@ func (c *Client) PaneGraphicsStream(ctx context.Context, params PaneGraphicsStre
 	reader := bufio.NewReader(conn)
 
 	ack, err := func() (json.RawMessage, error) {
-		if err := writeRequestLine(conn, c.requestID(), MethodPaneGraphicsStream, params); err != nil {
+		if _, err := conn.Write(request); err != nil {
 			return nil, requestError(ctx, MethodPaneGraphicsStream, "cannot send request", err)
 		}
 		line, err := readLine(reader)

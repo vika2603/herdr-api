@@ -33,6 +33,7 @@ type fakeServer struct {
 
 	mu          sync.Mutex
 	requests    []fakeRequest
+	accepted    int
 	connections int
 	clientBytes [][]byte
 }
@@ -73,6 +74,9 @@ func (s *fakeServer) serve() {
 		if err != nil {
 			return
 		}
+		s.mu.Lock()
+		s.accepted++
+		s.mu.Unlock()
 		go s.serveConn(conn)
 	}
 }
@@ -117,6 +121,15 @@ func (s *fakeServer) request(index int) fakeRequest {
 		s.t.Fatalf("no request recorded at index %d, have %d", index, len(s.requests))
 	}
 	return s.requests[index]
+}
+
+// acceptCount is how many connections the server accepted, request line or
+// not. Accepts are counted in order, so a connection counted here precedes
+// every connection accepted after it.
+func (s *fakeServer) acceptCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.accepted
 }
 
 func (s *fakeServer) connectionCount() int {

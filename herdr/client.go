@@ -84,6 +84,10 @@ func (c *Client) Call(ctx context.Context, method string, params, result any) er
 
 // CallRaw sends one request and returns the raw result object.
 func (c *Client) CallRaw(ctx context.Context, method string, params any) (json.RawMessage, error) {
+	request, err := requestLine(c.requestID(), method, params)
+	if err != nil {
+		return nil, requestError(ctx, method, "cannot send request", err)
+	}
 	conn, err := dialSocket(ctx, c.socketPath, c.dialTimeout)
 	if err != nil {
 		return nil, err
@@ -92,7 +96,7 @@ func (c *Client) CallRaw(ctx context.Context, method string, params any) (json.R
 	stopWatch := watchContext(ctx, conn)
 	defer stopWatch()
 
-	if err := writeRequestLine(conn, c.requestID(), method, params); err != nil {
+	if _, err := conn.Write(request); err != nil {
 		return nil, requestError(ctx, method, "cannot send request", err)
 	}
 	line, err := readLine(bufio.NewReader(conn))
@@ -109,6 +113,10 @@ func (c *Client) CallRaw(ctx context.Context, method string, params any) (json.R
 // ctx bounds the opening request only. Once the Stream exists it lives until
 // Close; each Next takes its own context.
 func (c *Client) OpenStream(ctx context.Context, method string, params any) (*Stream, error) {
+	request, err := requestLine(c.requestID(), method, params)
+	if err != nil {
+		return nil, requestError(ctx, method, "cannot send request", err)
+	}
 	conn, err := dialSocket(ctx, c.socketPath, c.dialTimeout)
 	if err != nil {
 		return nil, err
@@ -117,7 +125,7 @@ func (c *Client) OpenStream(ctx context.Context, method string, params any) (*St
 	reader := bufio.NewReader(conn)
 
 	ack, err := func() (json.RawMessage, error) {
-		if err := writeRequestLine(conn, c.requestID(), method, params); err != nil {
+		if _, err := conn.Write(request); err != nil {
 			return nil, requestError(ctx, method, "cannot send request", err)
 		}
 		line, err := readLine(reader)
@@ -163,16 +171,21 @@ type wireError struct {
 // to be an object.
 var emptyParams = json.RawMessage(`{}`)
 
-func writeRequestLine(w io.Writer, id, method string, params any) error {
+// requestLine encodes one request as the line to write to the socket.
+//
+// Every caller encodes the line before it dials. The server reads the request
+// once as soon as it accepts the connection and, finding nothing there yet,
+// waits out a poll interval before looking again, so a request encoded on an
+// open connection answers a poll interval later than one already in hand.
+func requestLine(id, method string, params any) ([]byte, error) {
 	if params == nil {
 		params = emptyParams
 	}
 	line, err := json.Marshal(wireRequest{ID: id, Method: method, Params: params})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = w.Write(append(line, '\n'))
-	return err
+	return append(line, '\n'), nil
 }
 
 func decodeResponseLine(method string, line []byte) (json.RawMessage, error) {
